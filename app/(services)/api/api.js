@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const URL="https://990e-2409-40c2-2e-d2c9-11a5-9b80-b604-8f15.ngrok-free.app";
+const URL="https://7110-2409-40c2-3a-3e18-14cb-ddd8-920d-7c75.ngrok-free.app";
 
 export const registerUser = async (user) => {
   console.log(user);
@@ -53,6 +53,7 @@ export const getAttendanceSummary = async (studentId) => {
       {
         headers: {
           "Content-Type": "application/json",
+          'ngrok-skip-browser-warning': 'true',
         },
       }
     );
@@ -70,6 +71,7 @@ export const getStudentCourses = async (studentId) => {
       {
         headers: {
           "Content-Type": "application/json",
+          'ngrok-skip-browser-warning': 'true', 
         },
       }
     );
@@ -80,5 +82,70 @@ export const getStudentCourses = async (studentId) => {
       return { courses: [] }; // Return a fallback structure
     
   }
+  };
+  
+
+export const getCourseDetails = async (courseId) => {
+    try {
+      const response = await axios.get(`${URL}/api/students/course/${courseId}`, {
+        headers: {
+          "Content-Type": "application/json",
+          'ngrok-skip-browser-warning': 'true',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("API Error in getCourseDetails:", error);
+      return null;
+    }
+  };
+  
+
+
+export const getAttendanceWindowStatus = async (courseId, studentId) => {
+    try {
+      const response = await axios.get(`${URL}/api/attendance/course/${courseId}/window-status?studentId=${studentId}`, {
+        headers: {
+          "Content-Type": "application/json",
+          'ngrok-skip-browser-warning': 'true',
+        },
+      });
+
+       // Check the response to determine the appropriate return
+    // if (response.data.isAttendanceMarked) {
+    //   return { message: "You have already marked attendance for today." }; // Return a specific message
+    // }
+
+      return response.data; // Response will have `isWindowOpen`
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        console.log("No attendance record found for today.");
+        return { isWindowOpen: false ,isAttendanceMarked: false, message: "Attendance record not found for today." }; // Default to closed if no record is found
+      }
+      console.error("API Error in getAttendanceWindowStatus:", error);
+      
+      return { isWindowOpen: false }; // Default to closed in case of error
+    }
+  };
+  
+
+
+  export const markAttendance = async (courseId, studentId) => {
+    try {
+      const response = await axios.post(
+        `${URL}/api/attendance/course/${courseId}/student-mark-attendance`,
+        { studentId }, // Pass the studentId in the request body
+        {
+          headers: {
+            "Content-Type": "application/json",
+            'ngrok-skip-browser-warning': 'true',
+          },
+        }
+      );
+      return response.data; // Return success response
+    } catch (error) {
+      console.error("API Error in markAttendance:", error);
+      throw error; // Handle the error in the component
+    }
   };
   

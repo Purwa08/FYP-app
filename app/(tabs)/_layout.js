@@ -11,6 +11,7 @@ export default function RootLayout() {
         name="index"
         options={{
           headerShown: false,
+          headerLeft: () => null,
           title: "Home",
           tabBarIcon: ({ color }) => (
             <FontAwesome size={28} name="home" color={color} />

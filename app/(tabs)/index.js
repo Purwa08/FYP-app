@@ -1,95 +1,7 @@
-// import React from "react";
-// import { StyleSheet, Text, View } from "react-native";
-// import { LinearGradient } from "expo-linear-gradient";
-// import Icon from "react-native-vector-icons/FontAwesome";
-// import Fontisto from "@expo/vector-icons/Fontisto";
-// import ProtectedRoute from "../../components/ProtectedRoute";
-
-// const TabHome = () => {
-//   return (
-//     <ProtectedRoute>
-//     <View style={styles.container}>
-//       <Text style={styles.title}>Attendify</Text>
-//       <Text style={styles.subtitle}>Registered Courses:</Text>
-//       <View style={styles.techList}>
-//         <LinearGradient colors={["#61DBFB", "#35AFC2"]} style={styles.techItem}>
-//           <Icon name="code" size={30} color="#fff" />
-//           <Text style={styles.techText}>Computer Networks</Text>
-//         </LinearGradient>
-//         <LinearGradient colors={["#764ABC", "#543B9A"]} style={styles.techItem}>
-//           <Fontisto name="redux" size={30} color="#fff" />
-//           <Text style={styles.techText}>Operating System</Text>
-//         </LinearGradient>
-//         <LinearGradient colors={["#FF4154", "#D12B3A"]} style={styles.techItem}>
-//           <Icon name="database" size={30} color="#fff" />
-//           <Text style={styles.techText}>Database Management System</Text>
-//         </LinearGradient>
-//         <LinearGradient colors={["#0FAAFF", "#0B79C1"]} style={styles.techItem}>
-//           <Icon name="wpforms" size={30} color="#fff" />
-//           <Text style={styles.techText}>Design and Analysis of Algorithms</Text>
-//         </LinearGradient>
-//         <LinearGradient colors={["#000000", "#434343"]} style={styles.techItem}>
-//           <Icon name="server" size={30} color="#fff" />
-//           <Text style={styles.techText}>Data Structures and Algorithms</Text>
-//         </LinearGradient>
-//       </View>
-//     </View>
-//     </ProtectedRoute>
-//   );
-// };
-
-// export default TabHome;
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     justifyContent: "center",
-//     alignItems: "center",
-//     padding: 20,
-//     backgroundColor: "#f5f5f5",
-//   },
-//   title: {
-//     fontSize: 32,
-//     fontWeight: "bold",
-//     marginBottom: 20,
-//     textAlign: "center",
-//     color: "#333",
-//   },
-//   subtitle: {
-//     fontSize: 20,
-//     fontWeight: "bold",
-//     marginBottom: 20,
-//     textAlign: "center",
-//     color: "#666",
-//   },
-//   techList: {
-//     flexDirection: "column",
-//     alignItems: "center",
-//     width: "100%",
-//   },
-//   techItem: {
-//     flexDirection: "row",
-//     alignItems: "center",
-//     justifyContent: "center",
-//     width: "90%",
-//     paddingVertical: 15,
-//     paddingHorizontal: 10,
-//     borderRadius: 10,
-//     marginBottom: 15,
-//     elevation: 5,
-//   },
-//   techText: {
-//     fontSize: 18,
-//     color: "#fff",
-//     marginLeft: 10,
-//     fontWeight: "bold",
-//   },
-// });
-
-
-
 import React, { useState, useEffect } from "react";
-import { StyleSheet, Text, View, ScrollView, ActivityIndicator, Dimensions, TouchableOpacity } from "react-native";
+import { useLayoutEffect } from "react";
+import { useNavigation } from "@react-navigation/native";
+import { StyleSheet, Text, View, ScrollView, ActivityIndicator, TouchableOpacity, Alert } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Icon from "react-native-vector-icons/FontAwesome";
 import ProtectedRoute from "../../components/ProtectedRoute";
@@ -97,14 +9,19 @@ import { getStudentCourses } from "../(services)/api/api.js";
 import { useSelector } from "react-redux";
 import { useRouter } from "expo-router";
 
-const { width } = Dimensions.get("window"); // Get the screen width to make it responsive
-
 const TabHome = () => {
   const [courses, setCourses] = useState([]); // To hold the list of courses
   const [loading, setLoading] = useState(true); // To track loading state
   const user = useSelector((state) => state.auth.user);
   const router = useRouter();
+  const navigation = useNavigation();
 
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerLeft: () => null, // Removes the back button (arrow)
+      headerShown: false, // Hides the folder name and header
+    });
+  }, [navigation]);
 
   useEffect(() => {
     if (user && user.student) {
@@ -139,12 +56,18 @@ const TabHome = () => {
           <ActivityIndicator size="large" color="#0000ff" style={styles.loader} />
         ) : (
           <ScrollView contentContainerStyle={styles.techList}>
-             {Array.isArray(courses) && courses.length > 0 ? ( // Check if courses is an array
-            // {courses.length > 0 ? (
+            {Array.isArray(courses) && courses.length > 0 ? (
               courses.map((course) => (
-                <View key={course.courseID} style={styles.card}>
+                <TouchableOpacity
+                  key={course.courseID}
+                  style={styles.card}
+                  onPress={() => {
+                    // Navigate to the course page with courseID
+                    router.push(`/course/${course.courseID}`);
+                  }}
+                >
                   <LinearGradient
-                    colors={["#6a11cb", "#2575fc"]} // Gradient for the card's background
+                    colors={["#6a11cb", "#2575fc"]}
                     style={styles.cardGradient}
                   >
                     <View style={styles.cardContent}>
@@ -155,7 +78,7 @@ const TabHome = () => {
                       </View>
                     </View>
                   </LinearGradient>
-                </View>
+                </TouchableOpacity>
               ))
             ) : (
               <Text style={styles.noCoursesText}>No courses enrolled yet.</Text>
@@ -191,12 +114,12 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   techList: {
-    width: "100%",
+    width: "100%", // Full width of the container
     paddingHorizontal: 15,
     alignItems: "center", // Center the cards horizontally
   },
   card: {
-    width: width * 0.85, // Cards take up 85% of the screen width
+    width: "125%", // Cards take up 85% of the container width (responsive without Dimensions)
     marginBottom: 15,
     borderRadius: 10,
     elevation: 5, // Shadow effect for the cards on Android

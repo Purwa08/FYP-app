@@ -1,6 +1,7 @@
 import axios from "axios";
 
-const URL="https://7110-2409-40c2-3a-3e18-14cb-ddd8-920d-7c75.ngrok-free.app";
+const URL="https://64c2-2409-40c2-3a-3e18-3498-17a6-c00-1478.ngrok-free.app";
+//console.log(URL);
 
 export const registerUser = async (user) => {
   console.log(user);

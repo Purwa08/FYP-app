@@ -1,6 +1,10 @@
 import axios from "axios";
+import { API_URL } from "@env";
 
-const URL="https://64c2-2409-40c2-3a-3e18-3498-17a6-c00-1478.ngrok-free.app";
+console.log("Ngrok URL:", API_URL);
+const URL=API_URL;
+
+//const URL="https://c105-2409-40c2-10f-c2f5-2cfd-d33e-5a1c-e76a.ngrok-free.app";
 //console.log(URL);
 
 export const registerUser = async (user) => {

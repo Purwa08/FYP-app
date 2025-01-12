@@ -156,12 +156,17 @@
 
 
 
+
+
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ActivityIndicator, Alert, TouchableOpacity } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { getCourseDetails, getAttendanceWindowStatus, markAttendance } from "../(services)/api/api";
 import { useSelector } from "react-redux";
 import { MaterialIcons } from "@expo/vector-icons";
+import * as LocalAuthentication from 'expo-local-authentication';
+import * as Location from 'expo-location';
+
 
 const CoursePage = () => {
   const { courseId } = useLocalSearchParams(); // Extract courseId from the URL
@@ -171,6 +176,88 @@ const CoursePage = () => {
   const [isAttendanceMarked, setIsAttendanceMarked] = useState(false); // Attendance marked status
   const [statusMessage, setStatusMessage] = useState(""); // Message to display
   const user = useSelector((state) => state.auth.user);
+  const [geofence, setGeofence] = useState(null); // Add this line
+
+
+  const checkBiometricSupport = async () => {
+    const hasBiometrics = await LocalAuthentication.hasHardwareAsync(); // Check if the device supports biometrics
+    if (!hasBiometrics) {
+      Alert.alert("Error", "Biometric authentication is not supported on this device.");
+      return false;
+    }
+  
+    const supportedTypes = await LocalAuthentication.supportedAuthenticationTypesAsync(); // Get supported biometric types
+    if (supportedTypes.length === 0) {
+      Alert.alert("Error", "No supported biometric types available.");
+      return false;
+    }
+  
+    return true;
+  };
+
+  const requestLocationPermission = async () => {
+    const { status } = await Location.requestForegroundPermissionsAsync(); // Request permission for foreground access to location
+    if (status !== 'granted') {
+      Alert.alert('Permission Denied', 'Location permission is required to mark attendance.');
+      return false;
+    }
+    return true;
+  };
+
+  
+  const getCurrentLocation = async () => {
+    try {
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High, // Request high accuracy for location
+      });
+      return location.coords; // Returns latitude and longitude
+    } catch (error) {
+      console.error('Error getting location:', error);
+      Alert.alert('Error', 'Unable to get location. Please try again.');
+      return null;
+    }
+  };
+  
+
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const toRad = (value) => (value * Math.PI) / 180; // Helper function to convert degrees to radians
+    const R = 6371; // Radius of the Earth in kilometers
+  
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+  
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  
+    const distance = R * c; // Distance in kilometers
+    return distance * 1000; // Return distance in meters
+  };
+  
+
+  const isStudentInsideGeofence = (studentLocation, geofence) => {
+    const { latitude, longitude } = studentLocation;
+    console.log("latitude: ", latitude, "longitude: ", longitude)
+    const { latitude: courseLat, longitude: courseLong, radius } = geofence;
+    console.log(geofence)
+  
+    // const distance = Location.distance(
+    //   { latitude, longitude },
+    //   { latitude: courseLat, longitude: courseLong }
+    // );
+
+    const distance = calculateDistance(latitude, longitude, courseLat, courseLong);
+
+    console.log("distance: ",distance);
+  
+    return distance <= radius;  // Check if the student is within the geofence radius
+  };
+  
+  
+  
 
   useEffect(() => {
     const fetchData = async () => {
@@ -178,6 +265,8 @@ const CoursePage = () => {
         // Fetch course details
         const courseData = await getCourseDetails(courseId);
         setCourseDetails(courseData);
+        setGeofence(courseData.geofence);  // Store geofence data
+        //console.log(courseData);
 
         // Fetch attendance window status
         const windowStatus = await getAttendanceWindowStatus(courseId, user.student._id);
@@ -215,17 +304,73 @@ const CoursePage = () => {
     }
   };
 
+  // const markAttendanceHandler = async () => {
+  //   try {
+  //     await markAttendance(courseId, user.student._id);
+  //     setIsAttendanceMarked(true);
+  //     setStatusMessage("✅ You have already marked attendance for today.");
+  //     Alert.alert("Success", "Attendance marked successfully!");
+  //   } catch (error) {
+  //     console.error("Error marking attendance:", error);
+  //     Alert.alert("Error", "Unable to mark attendance. Please try again.");
+  //   }
+  // };
+
   const markAttendanceHandler = async () => {
+    const isBiometricSupported = await checkBiometricSupport(); // Check if biometric authentication is supported
+  
+    if (!isBiometricSupported) {
+      return; // If biometric authentication is not supported, stop the process
+    }
+
+    const hasLocationPermission = await requestLocationPermission();
+  if (!hasLocationPermission) {
+    Alert.alert(
+      "Location Permission Denied",
+      "You need to enable location permission to mark attendance. Please enable it in your device settings."
+    );
+    return; // Stop if location permission is denied
+  }
+
+  const studentLocation = await getCurrentLocation(); // Get the student's current location
+  if (!studentLocation) {
+    Alert.alert(
+      "Location Error",
+      "Unable to get your location. Please check your GPS or try again later."
+    );
+    return;
+  }
+
+  if (studentLocation && geofence) {
+    const isInsideGeofence = isStudentInsideGeofence(studentLocation, geofence);
+
+    if (!isInsideGeofence) {
+      Alert.alert("Location Error", "You are outside the designated attendance area. Please move inside the classroom.");
+      return; // Stop the process if the student is not within the geofence
+    }
+  }
+  
     try {
-      await markAttendance(courseId, user.student._id);
-      setIsAttendanceMarked(true);
-      setStatusMessage("✅ You have already marked attendance for today.");
-      Alert.alert("Success", "Attendance marked successfully!");
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Authenticate to mark attendance', // Message shown during authentication
+        fallbackLabel: 'Use Passcode', // Label for fallback option
+      });
+  
+      if (result.success) {
+        // If authentication is successful, proceed to mark attendance
+        await markAttendance(courseId, user.student._id);
+        setIsAttendanceMarked(true);
+        setStatusMessage("✅ You have already marked attendance for today.");
+        Alert.alert("Success", "Attendance marked successfully!");
+      } else {
+        Alert.alert("Authentication Failed", "Biometric authentication was not successful.");
+      }
     } catch (error) {
       console.error("Error marking attendance:", error);
       Alert.alert("Error", "Unable to mark attendance. Please try again.");
     }
   };
+  
 
   if (loading) {
     return (
@@ -243,6 +388,9 @@ const CoursePage = () => {
         <Text style={styles.courseTitle}>{courseDetails.name}</Text>
         <Text style={styles.courseInfo}>Code: {courseDetails.code}</Text>
         <Text style={styles.courseInfo}>Description: {courseDetails.description}</Text>
+        <Text style={styles.courseInfo}>Latitude: {courseDetails.geofence.latitude}</Text>
+        <Text style={styles.courseInfo}>Longitude: {courseDetails.geofence.longitude}</Text>
+        <Text style={styles.courseInfo}>Radius: {courseDetails.geofence.radius}</Text>
       </View>
 
       {/* Attendance Status */}

@@ -154,3 +154,24 @@ export const getAttendanceWindowStatus = async (courseId, studentId) => {
     }
   };
   
+
+
+
+  export const updateProfile = async (studentId, updatedData) => {
+    try {
+      const response = await axios.put(
+        `${URL}/api/students/student/${studentId}/update-profile`,
+        updatedData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("API Error in updateProfile:", error);
+      throw error;
+    }
+  };
+  

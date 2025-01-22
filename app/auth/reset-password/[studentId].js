@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, TextInput, Button, Alert, StyleSheet } from "react-native";
+import { View, TextInput, Button, Alert, StyleSheet, Text, TouchableOpacity} from "react-native";
 import { useRoute,useRouter } from "expo-router";
 import { useLocalSearchParams } from 'expo-router';
 import { resetPassword } from "../../(services)/api/api";

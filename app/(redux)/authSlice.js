@@ -47,10 +47,16 @@ const authSlice = createSlice({
     setLoading: (state, action) => {
       state.loading = action.payload;
     },
+
+    updateProfileAction: (state, action) => {
+      state.user = { ...state.user, student: { ...state.user.student, ...action.payload } };
+      AsyncStorage.setItem("userInfo", JSON.stringify(state.user));
+    },
+    
   },
 });
 
-export const { loginAction, logoutAction, setUser, setLoading, setFirstLogin} =
+export const { loginAction, logoutAction, setUser, setLoading, setFirstLogin, updateProfileAction} =
   authSlice.actions;
 
 export default authSlice.reducer;

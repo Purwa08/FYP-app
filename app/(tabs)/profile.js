@@ -18,6 +18,7 @@ export default function Profile() {
 
   const handleEditProfile = () => {
     console.log("Edit profile clicked!"); // Dummy function for now
+    router.push("/profile/edit-profile");
   };
 
   return (

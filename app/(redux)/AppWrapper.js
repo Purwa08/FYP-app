@@ -3,6 +3,7 @@ import { useDispatch } from "react-redux";
 
 import { Stack } from "expo-router/stack";
 import { loadUser } from "./authSlice";
+// import { ThemeProvider } from '../context/ThemeContext';
 
 function AppWrapper() {
   const dispatch = useDispatch();
@@ -12,6 +13,7 @@ function AppWrapper() {
   }, [dispatch]);
 
   return (
+    // <ThemeProvider> 
     <Stack>
       <Stack.Screen
         name="index"
@@ -20,6 +22,7 @@ function AppWrapper() {
       <Stack.Screen name="profile" options={{ title: "Profile" }} />
       <Stack.Screen name="auth/login" options={{ title: "Login" }} />
     </Stack>
+    // </ThemeProvider>
   );
 }
 

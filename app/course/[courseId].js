@@ -191,6 +191,15 @@ const CoursePage = () => {
       Alert.alert("Error", "No supported biometric types available.");
       return false;
     }
+
+    const hasFingerprint = supportedTypes.includes(LocalAuthentication.AuthenticationType.FINGERPRINT);
+    const hasFaceID = supportedTypes.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION);
+  
+    if (hasFaceID) {
+      console.log("Face ID is available (iOS)");
+    } else if (hasFingerprint) {
+      console.log("Fingerprint authentication is available");
+    }
   
     return true;
   };
@@ -205,12 +214,88 @@ const CoursePage = () => {
   };
 
   
+  // const getCurrentLocation = async () => {
+  //   try {
+  //     const location = await Location.getCurrentPositionAsync({
+  //       accuracy: Location.Accuracy.High, // Request high accuracy for location
+  //     });
+  //     return location.coords; // Returns latitude and longitude
+  //   } catch (error) {
+  //     console.error('Error getting location:', error);
+  //     Alert.alert('Error', 'Unable to get location. Please try again.');
+  //     return null;
+  //   }
+  // };
+  
+
+  // const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  //   const toRad = (value) => (value * Math.PI) / 180; // Helper function to convert degrees to radians
+  //   const R = 6371; // Radius of the Earth in kilometers
+  
+  //   const dLat = toRad(lat2 - lat1);
+  //   const dLon = toRad(lon2 - lon1);
+  
+  //   const a =
+  //     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+  //     Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+  //     Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  
+  //   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  
+  //   const distance = R * c; // Distance in kilometers
+  //   return distance * 1000; // Return distance in meters
+  // };
+  
+
+  // const isStudentInsideGeofence = (studentLocation, geofence) => {
+  //   const { latitude, longitude } = studentLocation;
+  //   console.log("latitude: ", latitude, "longitude: ", longitude)
+  //   const { latitude: courseLat, longitude: courseLong, radius } = geofence;
+  //   console.log(geofence)
+  
+  //   // const distance = Location.distance(
+  //   //   { latitude, longitude },
+  //   //   { latitude: courseLat, longitude: courseLong }
+  //   // );
+
+  //   const distance = calculateDistance(latitude, longitude, courseLat, courseLong);
+
+  //   console.log("distance: ",distance);
+  
+  //   return distance <= radius;  // Check if the student is within the geofence radius
+  // };
+  
+  const MAX_ALLOWED_ACCURACY = 25;
+  const MAX_RETRIES = 3;  // Retry limit for location
+  
   const getCurrentLocation = async () => {
     try {
       const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High, // Request high accuracy for location
+        enableHighAccuracy:true,
+        accuracy: Location.Accuracy.BestForNavigation,  // Max accuracy
+
+        timeInterval: 1000, // Update every second
+      distanceInterval: 1, // Update every meter
       });
-      return location.coords; // Returns latitude and longitude
+  
+      const { latitude, longitude, accuracy } = location.coords;
+  
+      // Limit to 7 decimal places for precision
+      const roundedLatitude = parseFloat(latitude.toFixed(7));
+      const roundedLongitude = parseFloat(longitude.toFixed(7));
+  
+      console.log(`📍 Current Location: Lat: ${roundedLatitude}, Lon: ${roundedLongitude}`);
+      console.log(`📏 GPS Accuracy: ±${accuracy} meters`);
+
+      // if (accuracy > MAX_ALLOWED_ACCURACY) {
+      //   Alert.alert(
+      //     "Poor GPS Accuracy",
+      //     `Your current GPS accuracy is ±${Math.round(accuracy)}m. Please move to an open area or enable Wi-Fi.`
+      //   );
+      //   return null; // Reject the location if accuracy is too low
+      // }
+  
+      return { latitude: roundedLatitude, longitude: roundedLongitude };
     } catch (error) {
       console.error('Error getting location:', error);
       Alert.alert('Error', 'Unable to get location. Please try again.');
@@ -218,45 +303,44 @@ const CoursePage = () => {
     }
   };
   
-
+  // Updated Haversine Formula with rounding
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
-    const toRad = (value) => (value * Math.PI) / 180; // Helper function to convert degrees to radians
-    const R = 6371; // Radius of the Earth in kilometers
+    const toRad = (value) => (value * Math.PI) / 180;
+    const R = 6371;
+  
+    // Round all values to 5 decimal places
+    lat1 = parseFloat(lat1.toFixed(7));
+    lon1 = parseFloat(lon1.toFixed(7));
+    lat2 = parseFloat(lat2.toFixed(7));
+    lon2 = parseFloat(lon2.toFixed(7));
   
     const dLat = toRad(lat2 - lat1);
     const dLon = toRad(lon2 - lon1);
   
     const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
   
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   
-    const distance = R * c; // Distance in kilometers
-    return distance * 1000; // Return distance in meters
+    return R * c * 1000; // Distance in meters
   };
   
-
+  // Updated Geofence Validation
   const isStudentInsideGeofence = (studentLocation, geofence) => {
     const { latitude, longitude } = studentLocation;
-    console.log("latitude: ", latitude, "longitude: ", longitude)
     const { latitude: courseLat, longitude: courseLong, radius } = geofence;
-    console.log(geofence)
   
-    // const distance = Location.distance(
-    //   { latitude, longitude },
-    //   { latitude: courseLat, longitude: courseLong }
-    // );
-
-    const distance = calculateDistance(latitude, longitude, courseLat, courseLong);
-
-    console.log("distance: ",distance);
+    // Ensure geofence coordinates are rounded
+    const roundedCourseLat = parseFloat(courseLat.toFixed(7));
+    const roundedCourseLong = parseFloat(courseLong.toFixed(7));
   
-    return distance <= radius;  // Check if the student is within the geofence radius
+    const distance = calculateDistance(latitude, longitude, roundedCourseLat, roundedCourseLong);
+  
+    console.log(`📏 Distance to Geofence Center: ${distance.toFixed(2)} meters`);
+  
+    return distance <= radius;
   };
-  
-  
   
 
   useEffect(() => {
@@ -320,10 +404,14 @@ const CoursePage = () => {
     const isBiometricSupported = await checkBiometricSupport(); // Check if biometric authentication is supported
   
     if (!isBiometricSupported) {
+      Alert.alert(
+        "Biometric Required",
+        "Your device does not support biometric authentication. Attendance cannot be marked."
+      );
       return; // If biometric authentication is not supported, stop the process
     }
 
-    const hasLocationPermission = await requestLocationPermission();
+  const hasLocationPermission = await requestLocationPermission();
   if (!hasLocationPermission) {
     Alert.alert(
       "Location Permission Denied",
@@ -345,15 +433,26 @@ const CoursePage = () => {
     const isInsideGeofence = isStudentInsideGeofence(studentLocation, geofence);
 
     if (!isInsideGeofence) {
-      Alert.alert("Location Error", "You are outside the designated attendance area. Please move inside the classroom.");
+      Alert.alert("Location Error", 
+        "You are outside the designated attendance area. Please move inside the classroom.");
       return; // Stop the process if the student is not within the geofence
     }
+  }
+    // Re-check Attendance Window Status (Edge Case Handling)
+  const windowStatus = await getAttendanceWindowStatus(courseId, user.student._id);
+  if (!windowStatus.isWindowOpen) {
+    Alert.alert(
+      "Attendance Window Closed",
+      "The attendance window has been closed. You cannot mark attendance now."
+    );
+    return;
   }
   
     try {
       const result = await LocalAuthentication.authenticateAsync({
         promptMessage: 'Authenticate to mark attendance', // Message shown during authentication
         fallbackLabel: 'Use Passcode', // Label for fallback option
+        disableDeviceFallback: false, // 🔒 Disables passcode fallback
       });
   
       if (result.success) {

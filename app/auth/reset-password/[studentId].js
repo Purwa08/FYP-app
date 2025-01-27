@@ -5,6 +5,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { resetPassword } from "../../(services)/api/api";
 import { useDispatch, useSelector } from "react-redux";
 import { setFirstLogin } from "../../(redux)/authSlice";
+import ProtectedRoute from "../../../components/ProtectedRoute"
 
 const ResetPasswordScreen = () => {
   //const route = useRoute();
@@ -60,6 +61,7 @@ const ResetPasswordScreen = () => {
   };
 
   return (
+    <ProtectedRoute>
     <View style={styles.container}>
     <Text style={styles.title}>Reset Password</Text>
     <TextInput
@@ -80,6 +82,7 @@ const ResetPasswordScreen = () => {
       <Text style={styles.buttonText}>Reset Password</Text>
     </TouchableOpacity>
   </View>
+  </ProtectedRoute>
   );
 };
 

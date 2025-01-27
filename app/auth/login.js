@@ -14,6 +14,7 @@ import { useMutation } from "@tanstack/react-query";
 import { loginUser } from "../(services)/api/api";
 import { useDispatch, useSelector } from "react-redux";
 import { loginAction } from "../(redux)/authSlice";
+import * as Device from "expo-device";
 
 
 const LoginSchema = Yup.object().shape({
@@ -46,6 +47,19 @@ const Login = () => {
     }
   }, [user]);
   console.log("user", user);
+
+  // Function to get device ID
+  const getDeviceId = async () => {
+    try {
+      const deviceId = Device.osInternalBuildId || Device.osBuildId || Device.deviceName;
+      console.log("Device ID:", deviceId);
+      return deviceId;
+    } catch (error) {
+      console.error("Error getting device ID:", error);
+      Alert.alert("Error", "Unable to get device information.");
+      return null;
+    }
+  };
 
   return (
     <View style={styles.container}>

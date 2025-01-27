@@ -166,46 +166,50 @@ import { useSelector } from "react-redux";
 import { MaterialIcons } from "@expo/vector-icons";
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as Location from 'expo-location';
-
+import turf from '@turf/turf';
+import ProtectedRoute from "../../components/ProtectedRoute";
 
 const CoursePage = () => {
-  const { courseId } = useLocalSearchParams(); // Extract courseId from the URL
-  const [courseDetails, setCourseDetails] = useState(null); // State for course data
-  const [loading, setLoading] = useState(true); // Loading state
-  const [isWindowOpen, setIsWindowOpen] = useState(false); // Window status
-  const [isAttendanceMarked, setIsAttendanceMarked] = useState(false); // Attendance marked status
-  const [statusMessage, setStatusMessage] = useState(""); // Message to display
+  const { courseId } = useLocalSearchParams();
+  const [courseDetails, setCourseDetails] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [isWindowOpen, setIsWindowOpen] = useState(false);
+  const [isAttendanceMarked, setIsAttendanceMarked] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
   const user = useSelector((state) => state.auth.user);
-  const [geofence, setGeofence] = useState(null); // Add this line
-
+  const [geofence, setGeofence] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const checkBiometricSupport = async () => {
-    const hasBiometrics = await LocalAuthentication.hasHardwareAsync(); // Check if the device supports biometrics
+    const hasBiometrics = await LocalAuthentication.hasHardwareAsync();
+    
     if (!hasBiometrics) {
       Alert.alert("Error", "Biometric authentication is not supported on this device.");
       return false;
     }
-  
-    const supportedTypes = await LocalAuthentication.supportedAuthenticationTypesAsync(); // Get supported biometric types
+    
+    const supportedTypes = await LocalAuthentication.supportedAuthenticationTypesAsync();
     if (supportedTypes.length === 0) {
       Alert.alert("Error", "No supported biometric types available.");
       return false;
     }
+    
+    // const hasFingerprint = supportedTypes.includes(LocalAuthentication.AuthenticationType.FINGERPRINT);
+    // const hasFaceID = supportedTypes.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION);
 
-    const hasFingerprint = supportedTypes.includes(LocalAuthentication.AuthenticationType.FINGERPRINT);
-    const hasFaceID = supportedTypes.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION);
-  
-    if (hasFaceID) {
-      console.log("Face ID is available (iOS)");
-    } else if (hasFingerprint) {
-      console.log("Fingerprint authentication is available");
-    }
-  
+    // if (hasFaceID) {
+    //   console.log("y\n")
+    //   console.log("Face ID is available (iOS)");
+    // } else if (hasFingerprint) {
+    //   console.log("y\n")
+    //   console.log("Fingerprint authentication is available");
+    // }
+    
     return true;
   };
 
   const requestLocationPermission = async () => {
-    const { status } = await Location.requestForegroundPermissionsAsync(); // Request permission for foreground access to location
+    const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('Permission Denied', 'Location permission is required to mark attendance.');
       return false;
@@ -213,81 +217,24 @@ const CoursePage = () => {
     return true;
   };
 
-  
-  // const getCurrentLocation = async () => {
-  //   try {
-  //     const location = await Location.getCurrentPositionAsync({
-  //       accuracy: Location.Accuracy.High, // Request high accuracy for location
-  //     });
-  //     return location.coords; // Returns latitude and longitude
-  //   } catch (error) {
-  //     console.error('Error getting location:', error);
-  //     Alert.alert('Error', 'Unable to get location. Please try again.');
-  //     return null;
-  //   }
-  // };
-  
-
-  // const calculateDistance = (lat1, lon1, lat2, lon2) => {
-  //   const toRad = (value) => (value * Math.PI) / 180; // Helper function to convert degrees to radians
-  //   const R = 6371; // Radius of the Earth in kilometers
-  
-  //   const dLat = toRad(lat2 - lat1);
-  //   const dLon = toRad(lon2 - lon1);
-  
-  //   const a =
-  //     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-  //     Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-  //     Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  
-  //   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  
-  //   const distance = R * c; // Distance in kilometers
-  //   return distance * 1000; // Return distance in meters
-  // };
-  
-
-  // const isStudentInsideGeofence = (studentLocation, geofence) => {
-  //   const { latitude, longitude } = studentLocation;
-  //   console.log("latitude: ", latitude, "longitude: ", longitude)
-  //   const { latitude: courseLat, longitude: courseLong, radius } = geofence;
-  //   console.log(geofence)
-  
-  //   // const distance = Location.distance(
-  //   //   { latitude, longitude },
-  //   //   { latitude: courseLat, longitude: courseLong }
-  //   // );
-
-  //   const distance = calculateDistance(latitude, longitude, courseLat, courseLong);
-
-  //   console.log("distance: ",distance);
-  
-  //   return distance <= radius;  // Check if the student is within the geofence radius
-  // };
-  
   const MAX_ALLOWED_ACCURACY = 25;
   const MAX_RETRIES = 3;  // Retry limit for location
-  
+
   const getCurrentLocation = async () => {
     try {
       const location = await Location.getCurrentPositionAsync({
-        enableHighAccuracy:true,
-        accuracy: Location.Accuracy.BestForNavigation,  // Max accuracy
-
+        enableHighAccuracy: true,
+        accuracy: Location.Accuracy.BestForNavigation,
         timeInterval: 1000, // Update every second
       distanceInterval: 1, // Update every meter
       });
-  
       const { latitude, longitude, accuracy } = location.coords;
-  
-      // Limit to 7 decimal places for precision
-      const roundedLatitude = parseFloat(latitude.toFixed(7));
-      const roundedLongitude = parseFloat(longitude.toFixed(7));
-  
-      console.log(`📍 Current Location: Lat: ${roundedLatitude}, Lon: ${roundedLongitude}`);
-      console.log(`📏 GPS Accuracy: ±${accuracy} meters`);
+      console.log(`Current Location: 
+        Latitude: ${latitude}, 
+        Longitude: ${longitude}, 
+        Accuracy: ${accuracy} meters`);
 
-      // if (accuracy > MAX_ALLOWED_ACCURACY) {
+         // if (accuracy > MAX_ALLOWED_ACCURACY) {
       //   Alert.alert(
       //     "Poor GPS Accuracy",
       //     `Your current GPS accuracy is ±${Math.round(accuracy)}m. Please move to an open area or enable Wi-Fi.`
@@ -295,64 +242,107 @@ const CoursePage = () => {
       //   return null; // Reject the location if accuracy is too low
       // }
   
-      return { latitude: roundedLatitude, longitude: roundedLongitude };
+      return { latitude: parseFloat(latitude.toFixed(7)), longitude: parseFloat(longitude.toFixed(7)) };
     } catch (error) {
       console.error('Error getting location:', error);
       Alert.alert('Error', 'Unable to get location. Please try again.');
       return null;
     }
   };
-  
-  // Updated Haversine Formula with rounding
+
+  // Function to calculate distance between two coordinates (Haversine formula)
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
     const toRad = (value) => (value * Math.PI) / 180;
     const R = 6371;
-  
-    // Round all values to 5 decimal places
+
     lat1 = parseFloat(lat1.toFixed(7));
     lon1 = parseFloat(lon1.toFixed(7));
     lat2 = parseFloat(lat2.toFixed(7));
     lon2 = parseFloat(lon2.toFixed(7));
-  
+
     const dLat = toRad(lat2 - lat1);
     const dLon = toRad(lon2 - lon1);
-  
-    const a =
-      Math.sin(dLat / 2) ** 2 +
-      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-  
+
+    const a = Math.sin(dLat / 2) ** 2 +
+              Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  
+
     return R * c * 1000; // Distance in meters
   };
+
+  // Check if the student's location is within the polygon
+  const isLocationInPolygon = (lat, lon, polygon) => {
+    const polygonCoords = polygon.coordinates[0];
+    let inside = false;
+
+    for (let i = 0, j = polygonCoords.length - 1; i < polygonCoords.length; j = i++) {
+      const xi = polygonCoords[i][0], yi = polygonCoords[i][1];
+      const xj = polygonCoords[j][0], yj = polygonCoords[j][1];
+
+      const intersect = yi > lon !== yj > lon &&
+                        lon < (xj - xi) * (lon - yi) / (yj - yi) + xi;
+      if (intersect) inside = !inside;
+    }
+    return inside;
+  };
+
   
-  // Updated Geofence Validation
+  // Check if the student is inside the geofence (circle or polygon)
   const isStudentInsideGeofence = (studentLocation, geofence) => {
     const { latitude, longitude } = studentLocation;
-    const { latitude: courseLat, longitude: courseLong, radius } = geofence;
-  
-    // Ensure geofence coordinates are rounded
-    const roundedCourseLat = parseFloat(courseLat.toFixed(7));
-    const roundedCourseLong = parseFloat(courseLong.toFixed(7));
-  
-    const distance = calculateDistance(latitude, longitude, roundedCourseLat, roundedCourseLong);
-  
-    console.log(`📏 Distance to Geofence Center: ${distance.toFixed(2)} meters`);
-  
-    return distance <= radius;
+    const { circle, polygon } = geofence;
+    console.log(geofence);
+
+      //  // Ensure geofence coordinates are rounded
+      //  const roundedCourseLat = parseFloat(circle.latitude.toFixed(7));
+      //  const roundedCourseLong = parseFloat(circle.longitude.toFixed(7));
+     
+      //  const distance = calculateDistance(latitude, longitude, roundedCourseLat, roundedCourseLong);
+     
+      //  console.log(`📏 Distance to Geofence Center: ${distance.toFixed(2)} meters`);
+     
+      //  return distance <= circle.radius;
+
+
+    // // Check for circular geofence
+    // if (circle) {
+    //   const distance = calculateDistance(latitude, longitude, circle.latitude, circle.longitude);
+    //   console.log("DISTANCE", distance);
+    //   if (distance > circle.radius) return false;
+      
+    // }
+
+    // // Check for polygonal geofence
+    // if (polygon && polygon.coordinates) {
+    //   return isLocationInPolygon(latitude, longitude, polygon);
+    // }
+
+    // Circle geofence check using Turf.js
+  const studentPoint = turf.point([longitude, latitude]);
+  const circleCenter = turf.point([circle.longitude, circle.latitude]);
+  const circleRadius = circle.radius;
+  const isInsideCircle = turf.distance(studentPoint, circleCenter, { units: 'meters' }) <= circleRadius;
+  console.log(`📍 Checking Circle Geofence: Inside = ${isInsideCircle}`);
+
+  // Polygon geofence check using Turf.js
+  const polygonArea = turf.polygon([polygon.coordinates]);
+  const isInsidePolygon = turf.booleanPointInPolygon(studentPoint, polygonArea);
+  console.log(`📍 Checking Polygon Geofence: Inside = ${isInsidePolygon}`);
+
+  return isInsideCircle && isInsidePolygon;
+
+    //return false;
   };
-  
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch course details
         const courseData = await getCourseDetails(courseId);
         setCourseDetails(courseData);
-        setGeofence(courseData.geofence);  // Store geofence data
+        setGeofence(courseData.geofence);
         //console.log(courseData);
 
-        // Fetch attendance window status
         const windowStatus = await getAttendanceWindowStatus(courseId, user.student._id);
         if (windowStatus.isAttendanceMarked) {
           setIsAttendanceMarked(true);
@@ -388,7 +378,8 @@ const CoursePage = () => {
     }
   };
 
-  // const markAttendanceHandler = async () => {
+
+   // const markAttendanceHandler = async () => {
   //   try {
   //     await markAttendance(courseId, user.student._id);
   //     setIsAttendanceMarked(true);
@@ -401,75 +392,85 @@ const CoursePage = () => {
   // };
 
   const markAttendanceHandler = async () => {
-    const isBiometricSupported = await checkBiometricSupport(); // Check if biometric authentication is supported
-  
+
+    if (isProcessing) return; // Prevent double clicking
+    setIsProcessing(true); // Disable button
+    
+    const isBiometricSupported = await checkBiometricSupport();
+    
     if (!isBiometricSupported) {
+      setIsProcessing(false); // Re-enable button if biometrics fail
       Alert.alert(
-        "Biometric Required",
-        "Your device does not support biometric authentication. Attendance cannot be marked."
-      );
-      return; // If biometric authentication is not supported, stop the process
+        "Biometric Required", 
+        "Your device does not support biometric authentication. Attendance cannot be marked.");
+      return;
     }
+    
+    // const hasLocationPermission = await requestLocationPermission();
+    // if (!hasLocationPermission) {
+    //   setIsProcessing(false); // Re-enable button if location permission fails
+    //   Alert.alert(
+    //     "Location Permission Denied", 
+    //     "You need to enable location permission to mark attendance.");
+    //   return;
+    // }
 
-  const hasLocationPermission = await requestLocationPermission();
-  if (!hasLocationPermission) {
-    Alert.alert(
-      "Location Permission Denied",
-      "You need to enable location permission to mark attendance. Please enable it in your device settings."
-    );
-    return; // Stop if location permission is denied
-  }
+    // const studentLocation = await getCurrentLocation();
+    // if (!studentLocation) {
+    //   setIsProcessing(false); // Re-enable button if location is unavailable
+    //   Alert.alert(
+    //     "Location Error", 
+    //     "Unable to get your location.");
+    //   return;
+    // }
 
-  const studentLocation = await getCurrentLocation(); // Get the student's current location
-  if (!studentLocation) {
-    Alert.alert(
-      "Location Error",
-      "Unable to get your location. Please check your GPS or try again later."
-    );
-    return;
-  }
+    // if (studentLocation && geofence) {
+    //   const isInsideGeofence = isStudentInsideGeofence(studentLocation, geofence);
+  
+    //   if (!isInsideGeofence) {
+    //     Alert.alert("Location Error", 
+    //       "You are outside the designated attendance area. Please move inside the classroom.");
+    //       setIsProcessing(false); // Re-enable button if outside geofence
+    //     return; // Stop the process if the student is not within the geofence
+    //   }
+    // }
 
-  if (studentLocation && geofence) {
-    const isInsideGeofence = isStudentInsideGeofence(studentLocation, geofence);
-
-    if (!isInsideGeofence) {
-      Alert.alert("Location Error", 
-        "You are outside the designated attendance area. Please move inside the classroom.");
-      return; // Stop the process if the student is not within the geofence
-    }
-  }
-    // Re-check Attendance Window Status (Edge Case Handling)
+     // Re-check Attendance Window Status (Edge Case Handling)
   const windowStatus = await getAttendanceWindowStatus(courseId, user.student._id);
   if (!windowStatus.isWindowOpen) {
     Alert.alert(
       "Attendance Window Closed",
       "The attendance window has been closed. You cannot mark attendance now."
     );
+    setIsProcessing(false); 
     return;
   }
   
     try {
       const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: 'Authenticate to mark attendance', // Message shown during authentication
-        fallbackLabel: 'Use Passcode', // Label for fallback option
-        disableDeviceFallback: false, // 🔒 Disables passcode fallback
+        promptMessage: 'Authenticate to mark attendance',
+        fallbackLabel: 'Use Passcode',
+        disableDeviceFallback: false,
       });
-  
+      
       if (result.success) {
-        // If authentication is successful, proceed to mark attendance
+        
         await markAttendance(courseId, user.student._id);
         setIsAttendanceMarked(true);
         setStatusMessage("✅ You have already marked attendance for today.");
         Alert.alert("Success", "Attendance marked successfully!");
       } else {
+       
         Alert.alert("Authentication Failed", "Biometric authentication was not successful.");
       }
     } catch (error) {
+     
       console.error("Error marking attendance:", error);
       Alert.alert("Error", "Unable to mark attendance. Please try again.");
+    }finally {
+      setIsProcessing(false); // Re-enable button after the process ends
     }
   };
-  
 
   if (loading) {
     return (
@@ -481,18 +482,17 @@ const CoursePage = () => {
   }
 
   return (
+    <ProtectedRoute>
     <View style={styles.container}>
-      {/* Course Details */}
       <View style={styles.courseCard}>
         <Text style={styles.courseTitle}>{courseDetails.name}</Text>
         <Text style={styles.courseInfo}>Code: {courseDetails.code}</Text>
         <Text style={styles.courseInfo}>Description: {courseDetails.description}</Text>
-        <Text style={styles.courseInfo}>Latitude: {courseDetails.geofence.latitude}</Text>
-        <Text style={styles.courseInfo}>Longitude: {courseDetails.geofence.longitude}</Text>
-        <Text style={styles.courseInfo}>Radius: {courseDetails.geofence.radius}</Text>
+        <Text style={styles.courseInfo}>Latitude: {courseDetails.geofence.circle.latitude}</Text>
+        <Text style={styles.courseInfo}>Longitude: {courseDetails.geofence.circle.longitude}</Text>
+        <Text style={styles.courseInfo}>Radius: {courseDetails.geofence.circle.radius}</Text>
       </View>
 
-      {/* Attendance Status */}
       <View style={styles.attendanceContainer}>
         <View style={styles.statusRow}>
           <Text style={styles.statusMessage}>{statusMessage}</Text>
@@ -504,13 +504,18 @@ const CoursePage = () => {
         </View>
       </View>
 
-      {/* Mark Attendance Button */}
       {!isAttendanceMarked && isWindowOpen && (
-        <TouchableOpacity style={styles.attendanceButton} onPress={markAttendanceHandler}>
-          <Text style={styles.attendanceButtonText}>Mark Attendance</Text>
+        <TouchableOpacity style={styles.attendanceButton} onPress={markAttendanceHandler}
+        disabled={isProcessing} >
+          {isProcessing ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={styles.attendanceButtonText}>Mark Attendance</Text>
+          )}
         </TouchableOpacity>
       )}
     </View>
+    </ProtectedRoute>
   );
 };
 

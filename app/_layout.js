@@ -8,8 +8,8 @@ import AppWrapper from "./(redux)/AppWrapper";
 export default function RootLayout() {
     return (
       <Provider store={store}>
-      <QueryClientProvider client={queryClient}>
-        <AppWrapper />
+      <QueryClientProvider client={queryClient} >
+        <AppWrapper  />
       </QueryClientProvider>
     </Provider>
        

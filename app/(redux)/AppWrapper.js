@@ -14,13 +14,14 @@ function AppWrapper() {
 
   return (
     // <ThemeProvider> 
-    <Stack>
+    <Stack screenOptions={{
+      headerShown: false, // Disable headers globally
+    }}>
       <Stack.Screen
         name="index"
         options={{ title: "Home", headerShown: false }}
       />
-      <Stack.Screen name="profile" options={{ title: "Profile" }} />
-      <Stack.Screen name="auth/login" options={{ title: "Login" }} />
+      <Stack.Screen name="auth/login" options={{ headerShown: true, title: "Login", headerBackTitle: "Back", gestureEnabled: false }} />
     </Stack>
     // </ThemeProvider>
   );

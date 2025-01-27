@@ -5,12 +5,16 @@ import ProtectedRoute from "../../components/ProtectedRoute";
 export default function RootLayout() {
   return (
     <ProtectedRoute>
-    <Tabs>
+    <Tabs screenOptions={{
+    headerTitle: "", // Default: No title for all screens
+    headerBackTitleVisible: false, // No back button text globally
+    headerLeft: () => null
+  }}>
 
       <Tabs.Screen
         name="index"
         options={{
-          headerShown: false,
+          headerShown: true,
           headerLeft: () => null,
           title: "Home",
           tabBarIcon: ({ color }) => (
@@ -34,7 +38,10 @@ export default function RootLayout() {
         name="profile"
         options={{
           headerShown: false,
-          title: "Profile",
+          // title: "Profile",
+          // headerTitle: "Student Profile",
+          headerBackTitleVisible: false, 
+          // headerLeft: () => null,
           tabBarIcon: ({ color }) => (
             <FontAwesome size={28} name="user" color={color} />
           ),

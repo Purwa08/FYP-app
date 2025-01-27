@@ -175,3 +175,24 @@ export const getAttendanceWindowStatus = async (courseId, studentId) => {
     }
   };
   
+
+
+// Change Password (new function)
+export const changePassword = async (studentId, currentPassword, newPassword, confirmPassword) => {
+  try {
+    const response = await axios.post(
+      `${URL}/api/studentauth/change-password/${studentId}`,
+      { currentPassword, newPassword, confirmPassword},
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    console.log("response", response.data); // Optional: log the response for debugging
+    return response.data; // Return the response data from the backend
+  } catch (error) {
+    console.error("API Error in changePassword:", error); // Optional: log the error for debugging
+    throw error; // Rethrow the error to handle it in the component
+  }
+};

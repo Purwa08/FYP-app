@@ -107,16 +107,18 @@
 import React, { useState } from "react";
 import { StyleSheet, Text, View, TouchableOpacity, Switch, Alert } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
-import { useDispatch } from "react-redux";
+import { useDispatch ,useSelector} from "react-redux";
 import { logoutAction } from "../(redux)/authSlice";
 import { useRouter } from "expo-router";
 // import { ThemeContext } from '../context/ThemeContext';
+import ProtectedRoute from "../../components/ProtectedRoute";
 
 const Settings = () => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [darkModeEnabled, setDarkModeEnabled] = useState(false);
   const dispatch = useDispatch();
   const router = useRouter();
+  const user = useSelector((state) => state.auth.user);
   //const { isDarkMode, toggleAppTheme } = useContext(ThemeContext); 
 
   // Toggle Notifications
@@ -146,6 +148,7 @@ const Settings = () => {
   };
 
   return (
+    <ProtectedRoute>
     <View style={styles.container}>
       <Text style={styles.header}>Settings</Text>
 
@@ -185,7 +188,7 @@ const Settings = () => {
         {/* Privacy */}
         <TouchableOpacity
           style={styles.option}
-          onPress={() => router.push("/auth/change-password")}
+          onPress={() => router.push(`/auth/change-password/${user.student._id}`)}
         >
           <Icon name="lock" size={24} color="#f44336" />
           <Text style={styles.optionText}>Privacy</Text>
@@ -210,6 +213,7 @@ const Settings = () => {
         </TouchableOpacity>
       </View>
     </View>
+    </ProtectedRoute>
   );
 };
 

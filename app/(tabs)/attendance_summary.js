@@ -223,12 +223,16 @@
 // });
 
 
-import React, { useEffect, useState } from "react";
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity,ActivityIndicator } from "react-native";
+
+import React, { useEffect, useState } from "react"; 
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { getAttendanceSummary } from "../(services)/api/api.js";
 import { useSelector } from "react-redux";
 import ProtectedRoute from "../../components/ProtectedRoute";
+import ProgressBar from 'react-native-progress/Bar';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import { Calendar } from "react-native-calendars"; // Import calendar
 
 const AttendanceSummary = () => {
   const [attendanceData, setAttendanceData] = useState(null);
@@ -236,29 +240,17 @@ const AttendanceSummary = () => {
   const [expandedCourse, setExpandedCourse] = useState(null); // To track expanded courses
   const user = useSelector((state) => state.auth.user);
   const studentId = user.student._id; // Get logged-in student's ID
-  console.log(studentId);
-
 
   useEffect(() => {
     const fetchAttendance = async () => {
-      if (!user) {
-        console.error("No user found!");
-        setLoading(false);
-        return;
-      }
-
-      //const studentId = user.student?._id;
-      if (!studentId) {
-        console.error("Student ID is not valid!");
+      if (!user || !studentId) {
         setLoading(false);
         return;
       }
 
       try {
         const data = await getAttendanceSummary(studentId);
-        console.log(data);
         setAttendanceData(data);
-        
       } catch (error) {
         console.error("Error fetching attendance data:", error);
       } finally {
@@ -276,16 +268,15 @@ const AttendanceSummary = () => {
   if (loading) {
     return (
       <View style={styles.container}>
-        <Text>Loading...</Text>
-        <ActivityIndicator size="large" color="#6a11cb" />
+        <ActivityIndicator size="large" color="#4caf50" />
       </View>
     );
   }
 
-  if (!attendanceData ) {
+  if (!attendanceData) {
     return (
       <View style={styles.container}>
-        <Text>No attendance data found.</Text>
+        <Text style={styles.noDataText}>No attendance data found.</Text>
       </View>
     );
   }
@@ -295,21 +286,50 @@ const AttendanceSummary = () => {
       <ScrollView style={styles.container}>
         <Text style={styles.title}>Attendance Summary</Text>
         <Text style={styles.subtitle}>{attendanceData.studentName}</Text>
+
         {attendanceData.attendanceSummary.map((course, index) => (
           <LinearGradient
             key={index}
-            
-            colors={["#6a11cb", "#2575fc"]} // Gradient for the card's background
-            style={styles.techItem}
+            colors={["#4e73df", "#1cc88a"]} // Updated gradient colors
+            style={styles.courseCard}
           >
             <Text style={styles.courseName}>{course.courseName}</Text>
             <Text style={styles.courseDetails}>Code: {course.courseCode}</Text>
             <Text style={styles.courseDetails}>Description: {course.description}</Text>
-            <Text style={styles.courseDetails}>
+
+            {/* Attendance percentage with progress bar */}
+            <Text style={styles.attendancePercentage}>
               Attendance: {course.attendancePercentage}%
             </Text>
 
-            {/* Toggle button for Attendance Records */}
+            <ProgressBar
+              progress={course.attendancePercentage / 100}
+              width={null}
+              height={10}
+              color={course.attendancePercentage >= 75 ? 'green' : 'red'}
+              unfilledColor="#ddd"
+              borderRadius={7}
+            />
+
+            {/* Session summary */}
+            <View style={styles.sessionSummaryContainer}>
+              <View style={styles.sessionSummaryItem}>
+                <Icon name="check-circle" size={24} color="green" />
+                <Text style={styles.sessionText}>Attended: {course.attendedSessions}</Text>
+              </View>
+              <View style={styles.sessionSummaryItem}>
+                <Icon name="cancel" size={24} color="red" />
+                <Text style={styles.sessionText}>Missed: {course.missedSessions}</Text>
+              </View>
+              <View style={styles.sessionSummaryItem}>
+                <Icon name="event" size={24} color="blue" />
+                <Text style={styles.sessionText}>
+                  Total: {course.attendedSessions + course.missedSessions}
+                </Text>
+              </View>
+            </View>
+
+            {/* Toggle button */}
             <TouchableOpacity
               style={styles.toggleButton}
               onPress={() => toggleAttendanceRecords(course.courseID)}
@@ -319,15 +339,23 @@ const AttendanceSummary = () => {
               </Text>
             </TouchableOpacity>
 
-            {/* Display attendance records if expanded */}
+            {/* Calendar */}
             {expandedCourse === course.courseID && (
               <View style={styles.attendanceRecords}>
-                {course.attendanceRecords.map((record, i) => (
-                  <View key={i} style={styles.record}>
-                    <Text>{new Date(record.date).toLocaleDateString()}</Text>
-                    <Text>{record.status}</Text>
-                  </View>
-                ))}
+                <Calendar
+                  current={new Date().toISOString().split("T")[0]}
+                  markedDates={
+                    course.attendanceRecords.reduce((acc, record) => {
+                      const date = new Date(record.date).toISOString().split("T")[0];
+                      acc[date] = {
+                        marked: true,
+                        dotColor: record.status === "present" ? "green" : "red",
+                      };
+                      return acc;
+                    }, {})
+                  }
+                  markingType="dot"
+                />
               </View>
             )}
           </LinearGradient>
@@ -342,43 +370,75 @@ export default AttendanceSummary;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#f0f4f8", // Light background color
     padding: 20,
-    backgroundColor: "#f5f5f5", // Light background to complement the gradient
   },
   title: {
     fontSize: 32,
     fontWeight: "bold",
-    marginBottom: 20,
+    marginBottom: 15,
     textAlign: "center",
-    color: "#333", // Darker text for contrast
+    color: "#333",
   },
   subtitle: {
     fontSize: 20,
-    fontWeight: "bold",
+    fontWeight: "600",
     marginBottom: 20,
     textAlign: "center",
-    color: "#777", // Slightly lighter for the subtitle
+    color: "#555",
   },
-  techItem: {
-    marginBottom: 20, // More space between items for clarity
-    borderRadius: 12, // More rounded corners for a modern look
-    padding: 20, // Increase padding for more space inside
-    elevation: 5, // Slight shadow to create depth
+  courseCard: {
+    marginBottom: 20,
+    borderRadius: 10,
+    padding: 20,
+    elevation: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
   },
   courseName: {
     fontSize: 22,
     fontWeight: "bold",
-    color: "#fff", // White text for the course name to stand out
+    color: "#fff",
   },
   courseDetails: {
     fontSize: 16,
-    color: "#fff", // Maintain white color for details for contrast
-    marginTop: 5, // Added spacing between details
+    color: "#fff",
+    marginTop: 5,
+  },
+  attendancePercentage: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#fff",
+    marginTop: 10,
+    marginBottom: 5,
+  },
+  sessionSummaryContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    backgroundColor: "#fff",
+    padding: 12,
+    borderRadius: 8,
+    marginVertical: 10,
+    elevation: 3,
+    flexWrap: 'wrap',
+  },
+  sessionSummaryItem: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  sessionText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#333",
+    marginLeft: 8,
   },
   toggleButton: {
     marginTop: 15,
-    padding: 12,
-    backgroundColor: "#56CCF2", // Use a pleasant green for action button
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    backgroundColor: "#4e73df",
     borderRadius: 6,
     alignItems: "center",
   },
@@ -392,16 +452,14 @@ const styles = StyleSheet.create({
     paddingLeft: 15,
     paddingRight: 15,
     paddingVertical: 10,
-    backgroundColor: "#ffffff", // Light background for attendance records
-    borderRadius: 8, // Rounded corners for records section
+    backgroundColor: "#ffffff",
+    borderRadius: 8,
   },
-  record: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 8,
-    paddingHorizontal: 10,
-    backgroundColor: "#f0f0f0", // Soft background for each record
-    borderRadius: 5, // Rounded corners for each record
-    marginVertical: 5, // Space between records
+  noDataText: {
+    fontSize: 18,
+    color: "#777",
+    textAlign: "center",
+    marginTop: 20,
   },
 });
+

@@ -198,6 +198,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { updateProfile } from "../(services)/api/api";  // Corrected path to the API
 import { updateProfileAction } from "../(redux)/authSlice";
 import { useRouter } from "expo-router";
+import ProtectedRoute from "../../components/ProtectedRoute";
 
 const EditProfile = () => {
   const router = useRouter();
@@ -286,6 +287,7 @@ const EditProfile = () => {
   }
 
   return (
+    <ProtectedRoute>
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Edit Profile</Text>
 
@@ -372,6 +374,7 @@ const EditProfile = () => {
         <Text style={styles.saveButtonText}>Save Changes</Text>
       </TouchableOpacity>
     </ScrollView>
+    </ProtectedRoute>
   );
 };
 

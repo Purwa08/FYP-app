@@ -34,7 +34,6 @@
 //     fetchCourse();
 //   }, [courseId]);
 
-
 //   const markAttendanceHandler = async () => {
 //     try {
 //       const response = await markAttendance(courseId, user.student._id); // Call the API
@@ -154,19 +153,27 @@
 //   },
 // });
 
-
-
-
-
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ActivityIndicator, Alert, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  Alert,
+  TouchableOpacity,
+  Platform,
+} from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import { getCourseDetails, getAttendanceWindowStatus, markAttendance } from "../(services)/api/api";
+import {
+  getCourseDetails,
+  getAttendanceWindowStatus,
+  markAttendance,
+} from "../(services)/api/api";
 import { useSelector } from "react-redux";
 import { MaterialIcons } from "@expo/vector-icons";
-import * as LocalAuthentication from 'expo-local-authentication';
-import * as Location from 'expo-location';
-import turf from '@turf/turf';
+import * as LocalAuthentication from "expo-local-authentication";
+import * as Location from "expo-location";
+import turf from "@turf/turf";
 import ProtectedRoute from "../../components/ProtectedRoute";
 
 const CoursePage = () => {
@@ -182,18 +189,22 @@ const CoursePage = () => {
 
   const checkBiometricSupport = async () => {
     const hasBiometrics = await LocalAuthentication.hasHardwareAsync();
-    
+
     if (!hasBiometrics) {
-      Alert.alert("Error", "Biometric authentication is not supported on this device.");
+      Alert.alert(
+        "Error",
+        "Biometric authentication is not supported on this device."
+      );
       return false;
     }
-    
-    const supportedTypes = await LocalAuthentication.supportedAuthenticationTypesAsync();
+
+    const supportedTypes =
+      await LocalAuthentication.supportedAuthenticationTypesAsync();
     if (supportedTypes.length === 0) {
       Alert.alert("Error", "No supported biometric types available.");
       return false;
     }
-    
+
     // const hasFingerprint = supportedTypes.includes(LocalAuthentication.AuthenticationType.FINGERPRINT);
     // const hasFaceID = supportedTypes.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION);
 
@@ -204,21 +215,24 @@ const CoursePage = () => {
     //   console.log("y\n")
     //   console.log("Fingerprint authentication is available");
     // }
-    
+
     return true;
   };
 
   const requestLocationPermission = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission Denied', 'Location permission is required to mark attendance.');
+    if (status !== "granted") {
+      Alert.alert(
+        "Permission Denied",
+        "Location permission is required to mark attendance."
+      );
       return false;
     }
     return true;
   };
 
   const MAX_ALLOWED_ACCURACY = 25;
-  const MAX_RETRIES = 3;  // Retry limit for location
+  const MAX_RETRIES = 3; // Retry limit for location
 
   const getCurrentLocation = async () => {
     try {
@@ -226,7 +240,7 @@ const CoursePage = () => {
         enableHighAccuracy: true,
         accuracy: Location.Accuracy.BestForNavigation,
         timeInterval: 1000, // Update every second
-      distanceInterval: 1, // Update every meter
+        distanceInterval: 1, // Update every meter
       });
       const { latitude, longitude, accuracy } = location.coords;
       console.log(`Current Location: 
@@ -234,18 +248,21 @@ const CoursePage = () => {
         Longitude: ${longitude}, 
         Accuracy: ${accuracy} meters`);
 
-         // if (accuracy > MAX_ALLOWED_ACCURACY) {
+      // if (accuracy > MAX_ALLOWED_ACCURACY) {
       //   Alert.alert(
       //     "Poor GPS Accuracy",
-      //     `Your current GPS accuracy is ±${Math.round(accuracy)}m. Please move to an open area or enable Wi-Fi.`
+      //     Your current GPS accuracy is ±${Math.round(accuracy)}m. Please move to an open area or enable Wi-Fi.
       //   );
       //   return null; // Reject the location if accuracy is too low
       // }
-  
-      return { latitude: parseFloat(latitude.toFixed(7)), longitude: parseFloat(longitude.toFixed(7)) };
+
+      return {
+        latitude: parseFloat(latitude.toFixed(7)),
+        longitude: parseFloat(longitude.toFixed(7)),
+      };
     } catch (error) {
-      console.error('Error getting location:', error);
-      Alert.alert('Error', 'Unable to get location. Please try again.');
+      console.error("Error getting location:", error);
+      Alert.alert("Error", "Unable to get location. Please try again.");
       return null;
     }
   };
@@ -263,8 +280,9 @@ const CoursePage = () => {
     const dLat = toRad(lat2 - lat1);
     const dLon = toRad(lon2 - lon1);
 
-    const a = Math.sin(dLat / 2) ** 2 +
-              Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
 
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
@@ -276,41 +294,46 @@ const CoursePage = () => {
     const polygonCoords = polygon.coordinates[0];
     let inside = false;
 
-    for (let i = 0, j = polygonCoords.length - 1; i < polygonCoords.length; j = i++) {
-      const xi = polygonCoords[i][0], yi = polygonCoords[i][1];
-      const xj = polygonCoords[j][0], yj = polygonCoords[j][1];
+    for (
+      let i = 0, j = polygonCoords.length - 1;
+      i < polygonCoords.length;
+      j = i++
+    ) {
+      const xi = polygonCoords[i][0],
+        yi = polygonCoords[i][1];
+      const xj = polygonCoords[j][0],
+        yj = polygonCoords[j][1];
 
-      const intersect = yi > lon !== yj > lon &&
-                        lon < (xj - xi) * (lon - yi) / (yj - yi) + xi;
+      const intersect =
+        yi > lon !== yj > lon &&
+        lon < ((xj - xi) * (lon - yi)) / (yj - yi) + xi;
       if (intersect) inside = !inside;
     }
     return inside;
   };
 
-  
   // Check if the student is inside the geofence (circle or polygon)
   const isStudentInsideGeofence = (studentLocation, geofence) => {
     const { latitude, longitude } = studentLocation;
     const { circle, polygon } = geofence;
     console.log(geofence);
 
-      //  // Ensure geofence coordinates are rounded
-      //  const roundedCourseLat = parseFloat(circle.latitude.toFixed(7));
-      //  const roundedCourseLong = parseFloat(circle.longitude.toFixed(7));
-     
-      //  const distance = calculateDistance(latitude, longitude, roundedCourseLat, roundedCourseLong);
-     
-      //  console.log(`📏 Distance to Geofence Center: ${distance.toFixed(2)} meters`);
-     
-      //  return distance <= circle.radius;
+    //  // Ensure geofence coordinates are rounded
+    //  const roundedCourseLat = parseFloat(circle.latitude.toFixed(7));
+    //  const roundedCourseLong = parseFloat(circle.longitude.toFixed(7));
 
+    //  const distance = calculateDistance(latitude, longitude, roundedCourseLat, roundedCourseLong);
+
+    //  console.log(📏 Distance to Geofence Center: ${distance.toFixed(2)} meters);
+
+    //  return distance <= circle.radius;
 
     // // Check for circular geofence
     // if (circle) {
     //   const distance = calculateDistance(latitude, longitude, circle.latitude, circle.longitude);
     //   console.log("DISTANCE", distance);
     //   if (distance > circle.radius) return false;
-      
+
     // }
 
     // // Check for polygonal geofence
@@ -319,18 +342,23 @@ const CoursePage = () => {
     // }
 
     // Circle geofence check using Turf.js
-  const studentPoint = turf.point([longitude, latitude]);
-  const circleCenter = turf.point([circle.longitude, circle.latitude]);
-  const circleRadius = circle.radius;
-  const isInsideCircle = turf.distance(studentPoint, circleCenter, { units: 'meters' }) <= circleRadius;
-  console.log(`📍 Checking Circle Geofence: Inside = ${isInsideCircle}`);
+    const studentPoint = turf.point([longitude, latitude]);
+    const circleCenter = turf.point([circle.longitude, circle.latitude]);
+    const circleRadius = circle.radius;
+    const isInsideCircle =
+      turf.distance(studentPoint, circleCenter, { units: "meters" }) <=
+      circleRadius;
+    console.log(`📍 Checking Circle Geofence: Inside = ${isInsideCircle}`);
 
-  // Polygon geofence check using Turf.js
-  const polygonArea = turf.polygon([polygon.coordinates]);
-  const isInsidePolygon = turf.booleanPointInPolygon(studentPoint, polygonArea);
-  console.log(`📍 Checking Polygon Geofence: Inside = ${isInsidePolygon}`);
+    // Polygon geofence check using Turf.js
+    const polygonArea = turf.polygon([polygon.coordinates]);
+    const isInsidePolygon = turf.booleanPointInPolygon(
+      studentPoint,
+      polygonArea
+    );
+    console.log(`📍 Checking Polygon Geofence: Inside = ${isInsidePolygon}`);
 
-  return isInsideCircle && isInsidePolygon;
+    return isInsideCircle && isInsidePolygon;
 
     //return false;
   };
@@ -343,13 +371,20 @@ const CoursePage = () => {
         setGeofence(courseData.geofence);
         //console.log(courseData);
 
-        const windowStatus = await getAttendanceWindowStatus(courseId, user.student._id);
+        const windowStatus = await getAttendanceWindowStatus(
+          courseId,
+          user.student._id
+        );
         if (windowStatus.isAttendanceMarked) {
           setIsAttendanceMarked(true);
           setStatusMessage("✅ You have already marked attendance for today.");
         } else {
           setIsWindowOpen(windowStatus.isWindowOpen);
-          setStatusMessage(windowStatus.isWindowOpen ? "🟢 Attendance window is open." : "🔴 Attendance window is closed.");
+          setStatusMessage(
+            windowStatus.isWindowOpen
+              ? "🟢 Attendance window is open."
+              : "🔴 Attendance window is closed."
+          );
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -364,13 +399,20 @@ const CoursePage = () => {
 
   const refreshStatusHandler = async () => {
     try {
-      const windowStatus = await getAttendanceWindowStatus(courseId, user.student._id);
+      const windowStatus = await getAttendanceWindowStatus(
+        courseId,
+        user.student._id
+      );
       if (windowStatus.isAttendanceMarked) {
         setIsAttendanceMarked(true);
         setStatusMessage("✅ You have already marked attendance for today.");
       } else {
         setIsWindowOpen(windowStatus.isWindowOpen);
-        setStatusMessage(windowStatus.isWindowOpen ? "🟢 Attendance window is open." : "🔴 Attendance window is closed.");
+        setStatusMessage(
+          windowStatus.isWindowOpen
+            ? "🟢 Attendance window is open."
+            : "🔴 Attendance window is closed."
+        );
       }
     } catch (error) {
       console.error("Error refreshing status:", error);
@@ -378,8 +420,7 @@ const CoursePage = () => {
     }
   };
 
-
-   // const markAttendanceHandler = async () => {
+  // const markAttendanceHandler = async () => {
   //   try {
   //     await markAttendance(courseId, user.student._id);
   //     setIsAttendanceMarked(true);
@@ -392,25 +433,25 @@ const CoursePage = () => {
   // };
 
   const markAttendanceHandler = async () => {
-
     if (isProcessing) return; // Prevent double clicking
     setIsProcessing(true); // Disable button
-    
+
     const isBiometricSupported = await checkBiometricSupport();
-    
+
     if (!isBiometricSupported) {
       setIsProcessing(false); // Re-enable button if biometrics fail
       Alert.alert(
-        "Biometric Required", 
-        "Your device does not support biometric authentication. Attendance cannot be marked.");
+        "Biometric Required",
+        "Your device does not support biometric authentication. Attendance cannot be marked."
+      );
       return;
     }
-    
+
     // const hasLocationPermission = await requestLocationPermission();
     // if (!hasLocationPermission) {
     //   setIsProcessing(false); // Re-enable button if location permission fails
     //   Alert.alert(
-    //     "Location Permission Denied", 
+    //     "Location Permission Denied",
     //     "You need to enable location permission to mark attendance.");
     //   return;
     // }
@@ -419,55 +460,58 @@ const CoursePage = () => {
     // if (!studentLocation) {
     //   setIsProcessing(false); // Re-enable button if location is unavailable
     //   Alert.alert(
-    //     "Location Error", 
+    //     "Location Error",
     //     "Unable to get your location.");
     //   return;
     // }
 
     // if (studentLocation && geofence) {
     //   const isInsideGeofence = isStudentInsideGeofence(studentLocation, geofence);
-  
+
     //   if (!isInsideGeofence) {
-    //     Alert.alert("Location Error", 
+    //     Alert.alert("Location Error",
     //       "You are outside the designated attendance area. Please move inside the classroom.");
     //       setIsProcessing(false); // Re-enable button if outside geofence
     //     return; // Stop the process if the student is not within the geofence
     //   }
     // }
 
-     // Re-check Attendance Window Status (Edge Case Handling)
-  const windowStatus = await getAttendanceWindowStatus(courseId, user.student._id);
-  if (!windowStatus.isWindowOpen) {
-    Alert.alert(
-      "Attendance Window Closed",
-      "The attendance window has been closed. You cannot mark attendance now."
+    // Re-check Attendance Window Status (Edge Case Handling)
+    const windowStatus = await getAttendanceWindowStatus(
+      courseId,
+      user.student._id
     );
-    setIsProcessing(false); 
-    return;
-  }
-  
+    if (!windowStatus.isWindowOpen) {
+      Alert.alert(
+        "Attendance Window Closed",
+        "The attendance window has been closed. You cannot mark attendance now."
+      );
+      setIsProcessing(false);
+      return;
+    }
+
     try {
       const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: 'Authenticate to mark attendance',
-        fallbackLabel: 'Use Passcode',
+        promptMessage: "Authenticate to mark attendance",
+        fallbackLabel: "Use Passcode",
         disableDeviceFallback: false,
       });
-      
+
       if (result.success) {
-        
         await markAttendance(courseId, user.student._id);
         setIsAttendanceMarked(true);
         setStatusMessage("✅ You have already marked attendance for today.");
         Alert.alert("Success", "Attendance marked successfully!");
       } else {
-       
-        Alert.alert("Authentication Failed", "Biometric authentication was not successful.");
+        Alert.alert(
+          "Authentication Failed",
+          "Biometric authentication was not successful."
+        );
       }
     } catch (error) {
-     
       console.error("Error marking attendance:", error);
       Alert.alert("Error", "Unable to mark attendance. Please try again.");
-    }finally {
+    } finally {
       setIsProcessing(false); // Re-enable button after the process ends
     }
   };
@@ -475,7 +519,7 @@ const CoursePage = () => {
   if (loading) {
     return (
       <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color="#003161" />
         <Text style={styles.loaderText}>Loading...</Text>
       </View>
     );
@@ -483,38 +527,60 @@ const CoursePage = () => {
 
   return (
     <ProtectedRoute>
-    <View style={styles.container}>
-      <View style={styles.courseCard}>
-        <Text style={styles.courseTitle}>{courseDetails.name}</Text>
-        <Text style={styles.courseInfo}>Code: {courseDetails.code}</Text>
-        <Text style={styles.courseInfo}>Description: {courseDetails.description}</Text>
-        <Text style={styles.courseInfo}>Latitude: {courseDetails.geofence.circle.latitude}</Text>
-        <Text style={styles.courseInfo}>Longitude: {courseDetails.geofence.circle.longitude}</Text>
-        <Text style={styles.courseInfo}>Radius: {courseDetails.geofence.circle.radius}</Text>
-      </View>
-
-      <View style={styles.attendanceContainer}>
-        <View style={styles.statusRow}>
-          <Text style={styles.statusMessage}>{statusMessage}</Text>
-          {!isAttendanceMarked && (
-            <TouchableOpacity onPress={refreshStatusHandler}>
-              <MaterialIcons name="refresh" size={24} color="#4caf50" />
-            </TouchableOpacity>
-          )}
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Course Details</Text>
+          <Text style={styles.subtitle}>
+            <Text style={[styles.subtitle, { fontWeight: "bold",color: "#003366"  }]}>Faculty:</Text>
+            {courseDetails.facultyId.username}
+          </Text>
+          
         </View>
-      </View>
+        <View style={styles.card}>
+          <Text style={styles.courseTitle}>{courseDetails.name}</Text>
+          <Text style={styles.courseInfo}>Code: {courseDetails.code}</Text>
+          <Text style={styles.courseInfo}>
+            Description: {courseDetails.description}
+          </Text>
+          <Text style={styles.courseInfo}>
+            Latitude: {courseDetails.geofence.circle.latitude}
+          </Text>
+          <Text style={styles.courseInfo}>
+            Longitude: {courseDetails.geofence.circle.longitude}
+          </Text>
+          <Text style={styles.courseInfo}>
+            Radius: {courseDetails.geofence.circle.radius}
+          </Text>
+        </View>
 
-      {!isAttendanceMarked && isWindowOpen && (
-        <TouchableOpacity style={styles.attendanceButton} onPress={markAttendanceHandler}
-        disabled={isProcessing} >
-          {isProcessing ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Text style={styles.attendanceButtonText}>Mark Attendance</Text>
-          )}
-        </TouchableOpacity>
-      )}
-    </View>
+        <View style={styles.attendanceContainer}>
+          <View style={styles.statusRow}>
+            <Text style={styles.statusMessage}>{statusMessage}</Text>
+            {!isAttendanceMarked && (
+              <TouchableOpacity
+                onPress={refreshStatusHandler}
+                style={styles.refreshButton}
+              >
+                <MaterialIcons name="refresh" size={24} color="#00796B" />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
+        {!isAttendanceMarked && isWindowOpen && (
+          <TouchableOpacity
+            style={styles.attendanceButton}
+            onPress={markAttendanceHandler}
+            disabled={isProcessing}
+          >
+            {isProcessing ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.attendanceButtonText}>Mark Attendance</Text>
+            )}
+          </TouchableOpacity>
+        )}
+      </View>
     </ProtectedRoute>
   );
 };
@@ -524,21 +590,51 @@ export default CoursePage;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f0f4f7",
+    backgroundColor: "#f0f4f8",
     padding: 16,
+  },
+  header: {
+    paddingTop: 40, // To bring the header down from the top of the screen
+    paddingBottom: 20,
+    alignItems: "center",
+    marginBottom: 10,
+    elevation: 5, // Adding elevation for a shadow effect
+    
+  },
+  subtitle: {
+    fontSize: 19,
+    fontWeight: "600",
+    marginBottom: 10,
+    fontFamily: "Arial",
+    textAlign: "center",
+    color: "#6E7570",
+  },
+  title: {
+    fontSize: 30,
+    fontWeight: "bold",
+    fontFamily: "Georgia",
+    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
+    marginBottom: 15,
+    textAlign: "center",
+    color: "#003366",
+  },
+
+  courseID: {
+    fontSize: 18,
+    color: "#555",
   },
   loaderContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f0f4f7",
+    backgroundColor: "#f8f9fa",
   },
   loaderText: {
     marginTop: 10,
     fontSize: 16,
-    color: "#555",
+    color: "#003161",
   },
-  courseCard: {
+  card: {
     backgroundColor: "#fff",
     borderRadius: 10,
     padding: 16,
@@ -547,29 +643,41 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 2,
+    elevation: 3,
   },
-  courseTitle: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 8,
+  courseDescription: {
+    fontSize: 16,
+    color: "#555",
+    marginBottom: 10,
   },
   courseInfo: {
     fontSize: 16,
+    fontFamily: "Palatino",
     color: "#555",
-    marginBottom: 4,
+    marginTop: 5,
   },
+  courseTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    fontFamily: "Times New Roman",
+    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
+    color: "#003161",
+  },
+
   attendanceContainer: {
+    //flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     backgroundColor: "#fff",
     borderRadius: 10,
     padding: 16,
-    marginBottom: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 2,
+    elevation: 3,
+    marginBottom: 20,
+    flexWrap: "wrap"
   },
   statusRow: {
     flexDirection: "row",
@@ -579,23 +687,23 @@ const styles = StyleSheet.create({
   statusMessage: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#333",
+    color: "#00796B",
   },
   attendanceButton: {
-    backgroundColor: "#6200ea",
+    backgroundColor: "#00796B",
     paddingVertical: 12,
-    paddingHorizontal: 24,
     borderRadius: 10,
-    alignSelf: "center",
-    shadowColor: "#6200ea",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.5,
-    shadowRadius: 4,
+    alignItems: "center",
     elevation: 3,
   },
   attendanceButtonText: {
     color: "#fff",
     fontSize: 18,
     fontWeight: "bold",
+  },
+  refreshButton: {
+    marginLeft: Platform.OS === 'ios' ? 50 : 10,
+    padding: 5,
+    borderRadius: 5,
   },
 });

@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet, Text, TouchableOpacity } from "react-native";
+import { View, StyleSheet, Text, TouchableOpacity ,Platform} from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "expo-router";
 import { logoutAction } from "../(redux)/authSlice";
@@ -64,41 +64,48 @@ export default function Profile() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f0f8ff",
+    backgroundColor: "#f0f4f8",
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 20,
   },
   profileCard: {
-    width: "90%",
+    width: "100%",
     backgroundColor: "#ffffff",
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 12,
+    padding: 24,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 5,
+    shadowRadius: 6,
+    elevation: 6,
     alignItems: "center",
   },
   title: {
     fontSize: 28,
     fontWeight: "bold",
-    marginBottom: 16,
-    color: "#333333",
+    fontFamily: "Georgia",
+    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
+    marginBottom: 20,
+    color: "#003366",
   },
   label: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#666666",
+    fontFamily: "Arial",
+    color: "#003161",
     alignSelf: "flex-start",
-    marginTop: 8,
+    marginTop: 10,
   },
   value: {
     fontSize: 18,
     fontWeight: "500",
+    fontFamily: "Palatino",
+    fontFamily: Platform.OS === 'ios' ? 'Palatino' : 'serif',
     color: "#333333",
     alignSelf: "flex-start",
-    marginBottom: 8,
+    marginBottom: 6,
+    paddingLeft: 5,
   },
   noUserText: {
     fontSize: 18,
@@ -107,7 +114,7 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 20,
+    marginTop: 25,
     width: "100%",
   },
   button: {
@@ -115,20 +122,24 @@ const styles = StyleSheet.create({
     height: 48,
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 8,
-    marginHorizontal: 5,
+    borderRadius: 10,
+    marginHorizontal: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   editButton: {
-    backgroundColor: "#4CAF50", // Green for edit profile
+    backgroundColor: "#003161", 
   },
   logoutButton: {
-    backgroundColor: "#E52B50", // Red for logout
+    backgroundColor: "#006A67", 
   },
   buttonText: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "bold",
+    fontFamily: "System",
     color: "#ffffff",
   },
 });
-
-

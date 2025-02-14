@@ -15,12 +15,11 @@
 // import { updateProfile } from "../(services)/api/api";
 // import {updateUserProfile} from "../(redux)/authSlice.js";
 // import { useDispatch } from "react-redux"; // Import useDispatch
-// import { useNavigation } from '@react-navigation/native'; 
-
+// import { useNavigation } from '@react-navigation/native';
 
 // export default function EditProfile() {
 //   const user = useSelector((state) => state.auth.user);
-//   const dispatch = useDispatch(); 
+//   const dispatch = useDispatch();
 //   const navigation = useNavigation(); // Hook for navigation
 
 //   // Handle the case when user is null (logged out)
@@ -63,7 +62,7 @@
 //         }));
 //         Alert.alert("Success", "Profile updated successfully!");
 //       }
-      
+
 //     } catch (error) {
 //       console.error("Error updating profile:", error);
 //       Alert.alert("Error", "Failed to update profile. Please try again.");
@@ -180,7 +179,6 @@
 //   },
 // });
 
-
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -192,10 +190,11 @@ import {
   Alert,
   ActivityIndicator,
   Image,
+  Platform
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { Ionicons } from "@expo/vector-icons";
-import { updateProfile } from "../(services)/api/api";  // Corrected path to the API
+import { updateProfile } from "../(services)/api/api"; // Corrected path to the API
 import { updateProfileAction } from "../(redux)/authSlice";
 import { useRouter } from "expo-router";
 import ProtectedRoute from "../../components/ProtectedRoute";
@@ -280,7 +279,7 @@ const EditProfile = () => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#6200ea" />
+        <ActivityIndicator size="large" color="#003161" />
         <Text>Updating Profile...</Text>
       </View>
     );
@@ -288,92 +287,119 @@ const EditProfile = () => {
 
   return (
     <ProtectedRoute>
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Edit Profile</Text>
+      <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Edit Profile</Text>
+        </View>
 
-      {/* Profile Image */}
-       <TouchableOpacity style={styles.imageContainer}>
-         {formData.profileImage ? (
-           <Image source={{ uri: formData.profileImage }} style={styles.profileImage} />
-         ) : (
-           <View style={styles.placeholderImage}>
-             <Ionicons name="person" size={64} color="#888" />
-           </View>
-         )}
-         <Text style={styles.changeImageText}>Change Profile Picture</Text>
-       </TouchableOpacity>
+        {/* Profile Image */}
+        <TouchableOpacity style={styles.imageContainer}>
+          {formData.profileImage ? (
+            <Image
+              source={{ uri: formData.profileImage }}
+              style={styles.profileImage}
+            />
+          ) : (
+            <View style={styles.placeholderImage}>
+              <Ionicons name="person" size={64} color="#888" />
+            </View>
+          )}
+          <Text style={styles.changeImageText}>Change Profile Picture</Text>
+        </TouchableOpacity>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Name"
-        value={formData.name}
-        onChangeText={(text) => handleChange("name", text)}
-      />
+        {/* <TextInput
+          style={styles.input}
+          placeholder="Name"
+          value={formData.name}
+          onChangeText={(text) => handleChange("name", text)}
+        />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={formData.email}
-        onChangeText={(text) => handleChange("email", text)}
-        keyboardType="email-address"
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          value={formData.email}
+          onChangeText={(text) => handleChange("email", text)}
+          keyboardType="email-address"
+        />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Phone Number"
-        value={formData.phone}
-        onChangeText={(text) => handleChange("phone", text)}
-        keyboardType="phone-pad"
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Phone Number"
+          value={formData.phone}
+          onChangeText={(text) => handleChange("phone", text)}
+          keyboardType="phone-pad"
+        />
 
-      {/* <TextInput
+        {/* <TextInput
         style={styles.input}
         placeholder="Profile Image URL"
         value={formData.profileImage}
         onChangeText={(text) => handleChange("profileImage", text)}
       /> */}
 
-      <TextInput
-        style={styles.input}
-        placeholder="Batch (e.g., 2021-2025)"
-        value={formData.batch}
-        onChangeText={(text) => handleChange("batch", text)}
-      />
+        {/*<TextInput
+          style={styles.input}
+          placeholder="Batch (e.g., 2021-2025)"
+          value={formData.batch}
+          onChangeText={(text) => handleChange("batch", text)}
+        />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Branch"
-        value={formData.branch}
-        onChangeText={(text) => handleChange("branch", text)}
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Branch"
+          value={formData.branch}
+          onChangeText={(text) => handleChange("branch", text)}
+        />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Roll Number"
-        value={formData.rollno}
-        onChangeText={(text) => handleChange("rollno", text)}
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Roll Number"
+          value={formData.rollno}
+          onChangeText={(text) => handleChange("rollno", text)}
+        />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Year (1-4)"
-        value={formData.year}
-        onChangeText={(text) => handleChange("year", text)}
-        keyboardType="number-pad"
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Year (1-4)"
+          value={formData.year}
+          onChangeText={(text) => handleChange("year", text)}
+          keyboardType="number-pad"
+        />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Semester (1-8)"
-        value={formData.semester}
-        onChangeText={(text) => handleChange("semester", text)}
-        keyboardType="number-pad"
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Semester (1-8)"
+          value={formData.semester}
+          onChangeText={(text) => handleChange("semester", text)}
+          keyboardType="number-pad"
+        /> */}
 
-      <TouchableOpacity style={styles.saveButton} onPress={handleSaveChanges}>
-        <Text style={styles.saveButtonText}>Save Changes</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        {[
+          { label: "Name", key: "name" },
+          { label: "Email", key: "email", keyboardType: "email-address" },
+          { label: "Phone Number", key: "phone", keyboardType: "phone-pad" },
+          { label: "Batch", key: "batch" },
+          { label: "Branch", key: "branch" },
+          { label: "Roll Number", key: "rollno" },
+          { label: "Year", key: "year", keyboardType: "number-pad" },
+          { label: "Semester", key: "semester", keyboardType: "number-pad" },
+        ].map((field) => (
+          <View key={field.key}>
+            <Text style={styles.inputLabel}>{field.label}</Text>
+            <TextInput
+              style={styles.input}
+              placeholder={field.label}
+              value={formData[field.key]}
+              onChangeText={(text) => handleChange(field.key, text)}
+              keyboardType={field.keyboardType || "default"}
+            />
+          </View>
+        ))}
+
+        <TouchableOpacity style={styles.saveButton} onPress={handleSaveChanges}>
+          <Text style={styles.saveButtonText}>Save Changes</Text>
+        </TouchableOpacity>
+      </ScrollView>
     </ProtectedRoute>
   );
 };
@@ -384,51 +410,77 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: 20,
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#f0f4f8",
+    alignItems: "left",
+  },
+  header: {
+    paddingTop: 40,
+    paddingBottom: 10,
+    alignItems: "center",
+    marginBottom: 10,    
   },
   title: {
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: "bold",
-    marginBottom: 20,
-    color: "#333",
+    fontFamily: "Georgia",
+    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
+    marginBottom: 5,
     textAlign: "center",
+    color: "#003366",
   },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    fontFamily: "Arial",
+    color: "#333",
+    alignSelf: "flex-start",
+    marginLeft: "1%",
+    marginBottom: 5,
+  },
+
   input: {
     backgroundColor: "#fff",
-    padding: 15,
-    marginBottom: 15,
-    borderRadius: 10,
+    padding: 14,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: "#bbb",
+    width: "100%",
+    fontSize: 16,
+    fontFamily: "Verdana",
+    marginBottom: 12,
   },
   imageContainer: {
-        alignItems: "center",
-        marginBottom: 20,
-      },
+    alignItems: "center",
+    marginBottom: 20,
+  },
   profileImage: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-      },
+    width: 100,
+    height: 100,
+    borderRadius: 60,
+    borderWidth: 2,
+    borderColor: "#003366",
+  },
   placeholderImage: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        backgroundColor: "#ccc",
-        justifyContent: "center",
-        alignItems: "center",
-      },
+    width: 100,
+    height: 100,
+    borderRadius: 60,
+    backgroundColor: "#ccc",
+    justifyContent: "center",
+    alignItems: "center",
+  },
   changeImageText: {
-        marginTop: 8,
-        color: "#007bff",
-        fontSize: 14,
-      },
+    marginTop: 8,
+    color: "#005B96",
+    fontSize: 16,
+    fontWeight: "600",
+  },
   saveButton: {
-    backgroundColor: "#6200ea",
+    backgroundColor: "#00796B",
     paddingVertical: 15,
     borderRadius: 10,
     alignItems: "center",
     marginTop: 10,
+    width: "100%",
   },
   saveButtonText: {
     color: "#fff",

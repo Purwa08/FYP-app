@@ -90,7 +90,6 @@
 //   },
 // });
 
-
 // import React, { useEffect, useState } from "react";
 // import { StyleSheet, Text, View, ScrollView } from "react-native";
 // import { LinearGradient } from "expo-linear-gradient";
@@ -222,16 +221,22 @@
 //   },
 // });
 
+import React, { useEffect, useState } from "react";
+import {
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  Platform,
+} from "react-native";
 
-
-import React, { useEffect, useState } from "react"; 
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { getAttendanceSummary } from "../(services)/api/api.js";
 import { useSelector } from "react-redux";
 import ProtectedRoute from "../../components/ProtectedRoute";
-import ProgressBar from 'react-native-progress/Bar';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import ProgressBar from "react-native-progress/Bar";
+import Icon from "react-native-vector-icons/MaterialIcons";
 import { Calendar } from "react-native-calendars"; // Import calendar
 
 const AttendanceSummary = () => {
@@ -268,7 +273,7 @@ const AttendanceSummary = () => {
   if (loading) {
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="large" color="#4caf50" />
+        <ActivityIndicator size="large" color="#00796B"/>
       </View>
     );
   }
@@ -284,15 +289,14 @@ const AttendanceSummary = () => {
   return (
     <ProtectedRoute>
       <ScrollView style={styles.container}>
-        <Text style={styles.title}>Attendance Summary</Text>
-        <Text style={styles.subtitle}>{attendanceData.studentName}</Text>
-
+      <View style={styles.header}>
+    <Text style={styles.title}>Attendance Summary</Text>
+    <Text style={styles.subtitle}>Student Name: {attendanceData.studentName}</Text>
+  </View>
         {attendanceData.attendanceSummary.map((course, index) => (
-          <LinearGradient
+          <View
             key={index}
-            colors={["#4e73df", "#1cc88a"]} // Updated gradient colors
-            style={styles.courseCard}
-          >
+            style={[styles.courseCard, { backgroundColor: "#ffffff", elevation: 5 }]}>
             <Text style={styles.courseName}>{course.courseName}</Text>
             <Text style={styles.courseDetails}>Code: {course.courseCode}</Text>
             <Text style={styles.courseDetails}>Description: {course.description}</Text>
@@ -306,7 +310,7 @@ const AttendanceSummary = () => {
               progress={course.attendancePercentage / 100}
               width={null}
               height={10}
-              color={course.attendancePercentage >= 75 ? 'green' : 'red'}
+              color={course.attendancePercentage >= 75 ? '#003161' : '#C62828'}
               unfilledColor="#ddd"
               borderRadius={7}
             />
@@ -315,11 +319,15 @@ const AttendanceSummary = () => {
             <View style={styles.sessionSummaryContainer}>
               <View style={styles.sessionSummaryItem}>
                 <Icon name="check-circle" size={24} color="green" />
-                <Text style={styles.sessionText}>Attended: {course.attendedSessions}</Text>
+                <Text style={styles.sessionText}>
+                  Attended: {course.attendedSessions}
+                </Text>
               </View>
               <View style={styles.sessionSummaryItem}>
                 <Icon name="cancel" size={24} color="red" />
-                <Text style={styles.sessionText}>Missed: {course.missedSessions}</Text>
+                <Text style={styles.sessionText}>
+                  Missed: {course.missedSessions}
+                </Text>
               </View>
               <View style={styles.sessionSummaryItem}>
                 <Icon name="event" size={24} color="blue" />
@@ -335,7 +343,9 @@ const AttendanceSummary = () => {
               onPress={() => toggleAttendanceRecords(course.courseID)}
             >
               <Text style={styles.toggleButtonText}>
-                {expandedCourse === course.courseID ? "Hide Records" : "Show Records"}
+                {expandedCourse === course.courseID
+                  ? "Hide Records"
+                  : "Show Records"}
               </Text>
             </TouchableOpacity>
 
@@ -344,21 +354,24 @@ const AttendanceSummary = () => {
               <View style={styles.attendanceRecords}>
                 <Calendar
                   current={new Date().toISOString().split("T")[0]}
-                  markedDates={
-                    course.attendanceRecords.reduce((acc, record) => {
-                      const date = new Date(record.date).toISOString().split("T")[0];
+                  markedDates={course.attendanceRecords.reduce(
+                    (acc, record) => {
+                      const date = new Date(record.date)
+                        .toISOString()
+                        .split("T")[0];
                       acc[date] = {
                         marked: true,
-                        dotColor: record.status === "present" ? "green" : "red",
+                        dotColor: record.status === "present" ? "#4caf50": "#f44336",
                       };
                       return acc;
-                    }, {})
-                  }
+                    },
+                    {}
+                  )}
                   markingType="dot"
                 />
               </View>
             )}
-          </LinearGradient>
+          </View>
         ))}
       </ScrollView>
     </ProtectedRoute>
@@ -373,56 +386,73 @@ const styles = StyleSheet.create({
     backgroundColor: "#f0f4f8", // Light background color
     padding: 20,
   },
+  header: {
+    paddingTop: Platform.OS === "ios" ? "40" : "10", // To bring the header down from the top of the screen
+    paddingBottom: 20,
+    alignItems: "center",
+    marginBottom: 10,
+    elevation: 5, // Adding elevation for a shadow effect
+    
+  },
   title: {
-    fontSize: 32,
+    fontSize: 30,
     fontWeight: "bold",
+    fontFamily: 'Georgia',
+    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
     marginBottom: 15,
     textAlign: "center",
-    color: "#333",
+    color: "#003366",
   },
   subtitle: {
-    fontSize: 20,
+    fontSize: 19,
     fontWeight: "600",
     marginBottom: 20,
+    fontFamily: 'Arial',
     textAlign: "center",
-    color: "#555",
+    color: "#B2B8B0",
   },
   courseCard: {
     marginBottom: 20,
     borderRadius: 10,
     padding: 20,
     elevation: 6,
+    backgroundColor: "#ffffff",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 5,
   },
   courseName: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "bold",
-    color: "#fff",
+    fontFamily: 'Courier New',
+    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
+    color: "#003161",
   },
   courseDetails: {
     fontSize: 16,
-    color: "#fff",
+    fontFamily: 'Palatino',
+    fontFamily: Platform.OS === 'ios' ? 'Palatino' : 'serif',
+    color: "#555",
     marginTop: 5,
   },
   attendancePercentage: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: "bold",
-    color: "#fff",
-    marginTop: 10,
+    fontFamily: 'System UI ',
+    color: "#003161",
+    marginTop: 5,
     marginBottom: 5,
   },
   sessionSummaryContainer: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "space-evenly",
     backgroundColor: "#fff",
     padding: 12,
     borderRadius: 8,
     marginVertical: 10,
     elevation: 3,
-    flexWrap: 'wrap',
+    flexWrap: "wrap-reverse",
   },
   sessionSummaryItem: {
     flexDirection: "row",
@@ -436,14 +466,15 @@ const styles = StyleSheet.create({
   },
   toggleButton: {
     marginTop: 15,
-    paddingVertical: 12,
+    paddingVertical: 9,
     paddingHorizontal: 30,
-    backgroundColor: "#4e73df",
+    backgroundColor: "#003161",
     borderRadius: 6,
     alignItems: "center",
   },
   toggleButtonText: {
     fontSize: 16,
+    fontFamily: 'System UI ',
     color: "#fff",
     fontWeight: "bold",
   },
@@ -458,8 +489,8 @@ const styles = StyleSheet.create({
   noDataText: {
     fontSize: 18,
     color: "#777",
+    fontFamily: 'System UI ',
     textAlign: "center",
     marginTop: 20,
   },
 });
-

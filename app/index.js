@@ -1,5 +1,5 @@
 import * as React from "react";
-import { View, StyleSheet, Text, TouchableOpacity } from "react-native";
+import { View, StyleSheet, Text, TouchableOpacity,Platform } from "react-native";
 import { Video, ResizeMode } from "expo-av";
 import { useRouter } from "expo-router";
 
@@ -67,6 +67,7 @@ const styles = StyleSheet.create({
         fontSize: 68,
         fontWeight: "bold",
         textAlign: "center",
+        fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
       },
       subText: {
         color: "white",
@@ -91,7 +92,8 @@ const styles = StyleSheet.create({
         right: 0,
       },
       button: {
-        backgroundColor: "#6200ea",
+        //backgroundColor: "#6200ea",
+        backgroundColor:"#003172",
         paddingVertical: 12,
         paddingHorizontal: 20,
         borderRadius: 25,

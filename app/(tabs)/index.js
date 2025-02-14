@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLayoutEffect } from "react";
 import { useNavigation } from "@react-navigation/native";
-import { StyleSheet, Text, View, ScrollView, ActivityIndicator, TouchableOpacity, Alert } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
+import { StyleSheet, Text, View, ScrollView, ActivityIndicator, TouchableOpacity, Alert, Platform} from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
 import ProtectedRoute from "../../components/ProtectedRoute";
 import { getStudentCourses } from "../(services)/api/api.js";
@@ -48,44 +47,42 @@ const TabHome = () => {
 
   return (
     <ProtectedRoute>
-      <View style={styles.container}>
-        <Text style={styles.title}>Attendify</Text>
-        <Text style={styles.subtitle}>Registered Courses:</Text>
+      <ScrollView contentContainerStyle={styles.scrollViewContent}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Attendify</Text>
+          <Text style={styles.subtitle}>Registered Courses:</Text>
+        </View>
 
         {loading ? (
-          <ActivityIndicator size="large" color="#0000ff" style={styles.loader} />
+          <ActivityIndicator size="large" color="#00796B" style={styles.loader} />
         ) : (
-          <ScrollView contentContainerStyle={styles.techList}>
-            {Array.isArray(courses) && courses.length > 0 ? (
+            courses.length > 0 ? (
               courses.map((course) => (
                 <TouchableOpacity
                   key={course.courseID}
                   style={styles.card}
-                  onPress={() => {
+                  onPress={() => 
                     // Navigate to the course page with courseID
-                    router.push(`/course/${course.courseID}`);
-                  }}
+                    router.push(`/course/${course.courseID}`)
+                  }
                 >
-                  <LinearGradient
-                    colors={["#6a11cb", "#2575fc"]}
-                    style={styles.cardGradient}
-                  >
+
                     <View style={styles.cardContent}>
-                      <Icon name="book" size={25} color="#fff" />
+                      <Icon name="book" size={30} color="#003161" />
                       <View style={styles.textContainer}>
                         <Text style={styles.courseName}>{course.courseName}</Text>
                         <Text style={styles.courseID}>Code: {course.courseCode}</Text>
                       </View>
                     </View>
-                  </LinearGradient>
+                  
                 </TouchableOpacity>
               ))
             ) : (
               <Text style={styles.noCoursesText}>No courses enrolled yet.</Text>
-            )}
-          </ScrollView>
+            )
+          
         )}
-      </View>
+      </ScrollView>
     </ProtectedRoute>
   );
 };
@@ -93,25 +90,38 @@ const TabHome = () => {
 export default TabHome;
 
 const styles = StyleSheet.create({
-  container: {
+  
+  scrollViewContent: {
     flex: 1,
-    justifyContent: "flex-start", // Align to the top of the screen
+    backgroundColor: "#f0f4f8",
+    padding: 20,
     alignItems: "center",
-    paddingTop: 20,
-    backgroundColor: "#f5f5f5",
-    paddingBottom: 20, // Adding bottom padding for a neat layout
+    padding: 20,
+  },
+  header: {
+    paddingTop: 40,
+    paddingBottom: 20,
+    alignItems: "center",
+    marginBottom: 10,
+    elevation: 5,
+    shadowColor: "#000",    
+    
   },
   title: {
-    fontSize: 32,
+    fontSize: 30,
     fontWeight: "bold",
-    color: "#6a11cb",
-    marginBottom: 10,
+    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
+    marginBottom: 15,
+    textAlign: "center",
+    color: "#003366",
   },
   subtitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#666",
+    fontSize: 19,
+    fontWeight: "600",
     marginBottom: 20,
+    fontFamily: "Arial",
+    textAlign: "center",
+    color: "#B2B8B0",
   },
   techList: {
     width: "100%", // Full width of the container
@@ -119,45 +129,51 @@ const styles = StyleSheet.create({
     alignItems: "center", // Center the cards horizontally
   },
   card: {
-    width: "125%", // Cards take up 85% of the container width (responsive without Dimensions)
-    marginBottom: 15,
+    width: "80%",
+    marginBottom: 20,
     borderRadius: 10,
-    elevation: 5, // Shadow effect for the cards on Android
-    shadowColor: "#000", // Shadow color for iOS
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.8,
-    shadowRadius: 5,
+    elevation: 5,
+    backgroundColor: "#ffffff",
+    shadowColor: "#000",
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    flexWrap:"wrap"
   },
-  cardGradient: {
-    borderRadius: 10,
-    overflow: "hidden", // Ensure the gradient does not overflow
-    padding: 15,
-  },
+  
   cardContent: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "flex-start", // Left-aligned
+    padding: 10,
+    justifyContent: "flex-start",
+    //flexWrap:"wrap"
+    
   },
   textContainer: {
-    marginLeft: 15,
+    marginLeft: 5,
   },
   courseName: {
-    fontSize: 18,
-    color: "#fff",
-    fontWeight: "bold",
+    fontSize: 25,
+    //fontWeight: "bold",
+    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
+    // fontFamily: "Courier New",
+    color: "#003161",
   },
   courseID: {
-    fontSize: 14,
-    color: "#fff",
-    marginTop: 5,
+    fontSize: 18,
+    fontFamily: "Palatino",
+    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
+    color: "#555",
+    marginTop: 3,
   },
   noCoursesText: {
     fontSize: 18,
-    color: "#888",
+    color: "#777",
+    fontFamily: "System UI ",
     textAlign: "center",
     marginTop: 20,
   },
   loader: {
-    marginTop: 20,
+    marginTop: 15,
   },
 });

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLayoutEffect } from "react";
 import { useNavigation } from "@react-navigation/native";
-import { StyleSheet, Text, View, ScrollView, ActivityIndicator, TouchableOpacity, Alert, Platform} from "react-native";
+import { StyleSheet, Text, View, ScrollView, ActivityIndicator, TouchableOpacity, Alert, Platform,RefreshControl,} from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
 import ProtectedRoute from "../../components/ProtectedRoute";
 import { getStudentCourses } from "../(services)/api/api.js";
@@ -11,6 +11,7 @@ import { useRouter } from "expo-router";
 const TabHome = () => {
   const [courses, setCourses] = useState([]); // To hold the list of courses
   const [loading, setLoading] = useState(true); // To track loading state
+  const [refreshing, setRefreshing] = useState(false); // For pull-to-refresh
   const user = useSelector((state) => state.auth.user);
   const router = useRouter();
   const navigation = useNavigation();
@@ -22,32 +23,42 @@ const TabHome = () => {
     });
   }, [navigation]);
 
-  useEffect(() => {
-    if (user && user.student) {
-      const studentId = user.student._id; // Replace with actual studentId from auth or context
-      console.log(studentId);
-      // Fetch courses when the component mounts
-      const fetchCourses = async () => {
-        try {
-          const data = await getStudentCourses(studentId); // Call the API to fetch student courses
-          console.log("API Response:", data);
-          setCourses(data.courses); // Set courses data
-        } catch (error) {
-          console.error("Error fetching student courses:", error);
-          setCourses([]); // Clear courses to ensure no stale data
-          Alert.alert("Error", "Unable to fetch courses. Please try again later.");
-        } finally {
-          setLoading(false); // Stop loading after the fetch is complete
-        }
-      };
+ // Function to fetch courses
+ const fetchCourses = async () => {
+  if (!user || !user.student) return;
+  const studentId = user.student._id;
+  //console.log("Fetching courses for student:", studentId);
+  try {
+    const data = await getStudentCourses(studentId);
+    //console.log("API Response:", data);
+    setCourses(data.courses || []);
+  } catch (error) {
+    console.error("Error fetching student courses:", error);
+    setCourses([]);
+    Alert.alert("Error", "Unable to fetch courses. Please try again later.");
+  } finally {
+    setLoading(false);
+    setRefreshing(false); // Stop refreshing after fetch
+  }
+};
 
-      fetchCourses();
-    }
-  }, [user]); // Empty dependency array to run only once when the component mounts
+useEffect(() => {
+  fetchCourses(); // Initial fetch on mount
+}, [user]);
+
+  // Handler for pull-to-refresh
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchCourses(); // Refetch data
+  };
 
   return (
     <ProtectedRoute>
-      <ScrollView contentContainerStyle={styles.scrollViewContent}>
+      <ScrollView contentContainerStyle={styles.scrollViewContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#00796B" />
+        }
+       >
         <View style={styles.header}>
           <Text style={styles.title}>Attendify</Text>
           <Text style={styles.subtitle}>Registered Courses:</Text>
@@ -92,9 +103,9 @@ export default TabHome;
 const styles = StyleSheet.create({
   
   scrollViewContent: {
-    flex: 1,
+    //flex: 1,
     backgroundColor: "#f0f4f8",
-    padding: 20,
+    //padding: 20,
     alignItems: "center",
     padding: 20,
   },

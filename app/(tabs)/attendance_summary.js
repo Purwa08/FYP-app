@@ -230,6 +230,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Platform,
+  RefreshControl
 } from "react-native";
 
 import { getAttendanceSummary } from "../(services)/api/api.js";
@@ -243,16 +244,17 @@ const AttendanceSummary = () => {
   const [attendanceData, setAttendanceData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [expandedCourse, setExpandedCourse] = useState(null); // To track expanded courses
+  const [refreshing, setRefreshing] = useState(false); // For pull-to-refresh
   const user = useSelector((state) => state.auth.user);
   const studentId = user.student._id; // Get logged-in student's ID
 
-  useEffect(() => {
+  
     const fetchAttendance = async () => {
       if (!user || !studentId) {
         setLoading(false);
         return;
       }
-
+ 
       try {
         const data = await getAttendanceSummary(studentId);
         setAttendanceData(data);
@@ -260,11 +262,21 @@ const AttendanceSummary = () => {
         console.error("Error fetching attendance data:", error);
       } finally {
         setLoading(false);
+        setRefreshing(false); // Stop refreshing after fetch
       }
     };
 
-    fetchAttendance();
+  
+
+  useEffect(() => {
+    fetchAttendance(); // Initial fetch on mount
   }, [user]);
+
+  // Handler for pull-to-refresh
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchAttendance(); // Refetch data
+  };
 
   const toggleAttendanceRecords = (courseId) => {
     setExpandedCourse(expandedCourse === courseId ? null : courseId); // Toggle the expanded state
@@ -288,7 +300,10 @@ const AttendanceSummary = () => {
 
   return (
     <ProtectedRoute>
-      <ScrollView style={styles.container}>
+      <ScrollView style={styles.container}
+      refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#00796B" />
+              }>
       <View style={styles.header}>
     <Text style={styles.title}>Attendance Summary</Text>
     <Text style={styles.subtitle}>Student Name: {attendanceData.studentName}</Text>

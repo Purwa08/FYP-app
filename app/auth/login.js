@@ -76,11 +76,20 @@ const Login = () => {
         <Formik
           initialValues={{ email: "student1@gmail.com", password: "student1" }}
           validationSchema={LoginSchema}
-          onSubmit={(values) => {
+          onSubmit={async (values) => {
             console.log(values);
+
+            try {
+              const deviceId = await getDeviceId();
+              if (!deviceId) {
+                Alert.alert("Error", "Unable to retrieve device ID.");
+                return;
+              }
+  
+              // Include the device ID in login payload
+              const payload = { ...values, deviceId };
             mutation
-              .mutateAsync(values)
-              .then((data) => {
+            mutation.mutateAsync(payload).then((data) => {
                 console.log("data", data);
                 dispatch(loginAction(data));
 
@@ -96,6 +105,9 @@ const Login = () => {
               .catch((err) => {
                 console.log(err);
               });
+            } catch (error) {
+              console.error("Login Error:", error);
+            }
           }}
         >
           {({
